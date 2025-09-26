@@ -150,6 +150,15 @@ export default function TaskSettings({ projectId }) {
                         </Typography>
                       </Box>
                     </MenuItem>
+                    {/* 添加自定义符号分割策略选项 */}
+                    <MenuItem value="custom">
+                      <Box>
+                        <Typography variant="subtitle2">{t('settings.splitTypeCustom')}</Typography>
+                        <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
+                          {t('settings.splitTypeCustomDesc')}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
                   </Select>
                 </FormControl>
 
@@ -228,6 +237,19 @@ export default function TaskSettings({ projectId }) {
                     value={taskSettings.separator || '\\n\\n'}
                     onChange={handleSettingChange}
                     helperText={t('settings.separatorHelper')}
+                    sx={{ mt: 3 }}
+                  />
+                )}
+
+                {/* 自定义符号分块器特殊设置 */}
+                {taskSettings.splitType === 'custom' && (
+                  <TextField
+                    fullWidth
+                    label={t('settings.customSeparator')}
+                    name="customSeparator"
+                    value={taskSettings.customSeparator || '---'}
+                    onChange={handleSettingChange}
+                    helperText={t('settings.customSeparatorHelper')}
                     sx={{ mt: 3 }}
                   />
                 )}
