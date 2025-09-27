@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getDatasetsById, updateDataset } from '@/lib/db/datasets';
+import { getQuestionById } from '@/lib/db/questions';
+import { getChunkById } from '@/lib/db/chunks';
 import LLMClient from '@/lib/llm/core/index';
-import getNewAnswerPrompt from '@/lib/llm/prompts/newAnswer';
-import getNewAnswerEnPrompt from '@/lib/llm/prompts/newAnswerEn';
+import { getNewAnswerPrompt } from '@/lib/llm/prompts/newAnswer';
 import { extractJsonFromLLMOutput } from '@/lib/llm/common/util';
 
 // 优化数据集答案
@@ -39,11 +40,24 @@ export async function POST(request, { params }) {
     // 创建LLM客户端
     const llmClient = new LLMClient(model);
 
+    const { question, answer, cot, chunkContent: storedChunkContent, questionId } = dataset;
+
+    let chunkContent = storedChunkContent || '';
+
+    if (!chunkContent && questionId) {
+      try {
+        const questionRecord = await getQuestionById(questionId);
+        if (questionRecord?.chunkId) {
+          const chunkRecord = await getChunkById(questionRecord.chunkId);
+          chunkContent = chunkRecord?.content || '';
+        }
+      } catch (error) {
+        console.error('Failed to load chunk content by questionId:', error);
+      }
+    }
+
     // 生成优化后的答案和思维链
-    const prompt =
-      language === 'en'
-        ? getNewAnswerEnPrompt(dataset.question, dataset.answer || '', dataset.cot || '', advice)
-        : getNewAnswerPrompt(dataset.question, dataset.answer || '', dataset.cot || '', advice);
+    const prompt = getNewAnswerPrompt(language, { question, answer, cot, advice, chunkContent });
 
     const response = await llmClient.getResponse(prompt);
 
@@ -58,7 +72,7 @@ export async function POST(request, { params }) {
     const updatedDataset = {
       ...dataset,
       answer: optimizedResult.answer,
-      cot: optimizedResult.cot || dataset.cot
+      cot: cot ? optimizedResult.cot || cot : '' // 如果没有提供思考过程，则不更新
     };
 
     await updateDataset(updatedDataset);
