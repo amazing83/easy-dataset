@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { Box, Grid, Card, CardContent } from '@mui/material';
-import { fetchWithRetry } from '@/lib/util/request';
-import { useSnackbar } from '@/hooks/useSnackbar';
+import { fetchWithRetry } from '@/lib/api';
+import { useSnackbar } from '@/components/common/SnackbarProvider';
 
 // 导入拆分后的组件
 import CategoryTabs from './CategoryTabs';
 import PromptList from './PromptList';
 import PromptDetail from './PromptDetail';
 import PromptEditDialog from './PromptEditDialog';
-import { getLanguageFromPromptKey } from './promptUtils';
+import { getLanguageFromPromptKey, shouldShowPrompt } from './promptUtils';
 
 /**
  * 提示词设置主组件
@@ -18,7 +18,7 @@ import { getLanguageFromPromptKey } from './promptUtils';
 export default function PromptSettings() {
   const { projectId } = useParams();
   const { i18n } = useTranslation();
-  const { showSuccess, showErrorMessage, SnackbarComponent } = useSnackbar();
+  const { showSuccessMessage, showErrorMessage, SnackbarComponent } = useSnackbar();
 
   // 基础状态
   const [currentLanguage, setCurrentLanguage] = useState(i18n.language === 'en' ? 'en' : 'zh-CN');
@@ -170,7 +170,7 @@ export default function PromptSettings() {
       const data = await response.json();
 
       if (data.success) {
-        showSuccess('已恢复为默认提示词');
+        showSuccessMessage('已恢复为默认提示词');
         loadPromptData();
         loadPromptContent();
       } else {
@@ -198,7 +198,7 @@ export default function PromptSettings() {
       const data = await response.json();
 
       if (data.success) {
-        showSuccess('提示词保存成功');
+        showSuccessMessage('提示词保存成功');
         setEditDialog({ ...editDialog, open: false });
         loadPromptData();
         loadPromptContent();

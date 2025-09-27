@@ -7,6 +7,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
+import 'github-markdown-css/github-markdown-light.css';
 
 /**
  * 可编辑字段组件，支持 Markdown 和原始文本两种展示方式
@@ -141,30 +142,19 @@ export default function EditableField({
       ) : (
         <Box
           sx={{
-            whiteSpace: 'pre-wrap',
             p: 2,
             borderRadius: 1,
             backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
             '& img': {
               maxWidth: '100%'
-            },
-            '& pre': {
-              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.05)',
-              padding: '8px',
-              borderRadius: '4px',
-              overflowX: 'auto'
-            },
-            '& code': {
-              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.05)',
-              padding: '2px 4px',
-              borderRadius: '4px',
-              fontFamily: 'monospace'
             }
           }}
         >
           {value ? (
             useMarkdown ? (
-              <ReactMarkdown>{value}</ReactMarkdown>
+              <div className="markdown-body">
+                <ReactMarkdown>{value}</ReactMarkdown>
+              </div>
             ) : (
               <Typography variant="body1">{value}</Typography>
             )

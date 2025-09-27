@@ -3,6 +3,7 @@
 import { Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
+import 'github-markdown-css/github-markdown-light.css';
 
 export default function ChunkViewDialog({ open, chunk, onClose }) {
   const { t } = useTranslation();
@@ -12,7 +13,9 @@ export default function ChunkViewDialog({ open, chunk, onClose }) {
       <DialogContent dividers>
         {chunk ? (
           <Box sx={{ maxHeight: '60vh', overflow: 'auto' }}>
-            <ReactMarkdown>{chunk.content}</ReactMarkdown>
+            <div className="markdown-body">
+              <ReactMarkdown>{chunk.content}</ReactMarkdown>
+            </div>
           </Box>
         ) : (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>

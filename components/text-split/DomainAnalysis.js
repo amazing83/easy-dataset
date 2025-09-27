@@ -38,6 +38,8 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import axios from 'axios';
 import { toast } from 'sonner';
 
+import 'github-markdown-css/github-markdown-light.css';
+
 /**
  * 领域分析组件
  * @param {Object} props
@@ -476,23 +478,25 @@ export default function DomainAnalysis({ projectId, toc = '', loading = false })
                   overflow: 'auto'
                 }}
               >
-                <ReactMarkdown
-                  components={{
-                    root: ({ children }) => (
-                      <div
-                        style={{
-                          fontFamily: 'monospace',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word'
-                        }}
-                      >
-                        {children}
-                      </div>
-                    )
-                  }}
-                >
-                  {toc}
-                </ReactMarkdown>
+                <div className="markdown-body">
+                  <ReactMarkdown
+                    components={{
+                      root: ({ children }) => (
+                        <div
+                          style={{
+                            fontFamily: 'monospace',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word'
+                          }}
+                        >
+                          {children}
+                        </div>
+                      )
+                    }}
+                  >
+                    {toc}
+                  </ReactMarkdown>
+                </div>
               </Box>
             </Box>
           </TabPanel>

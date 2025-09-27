@@ -22,5 +22,9 @@
   {
     "version": "1.4.0",
     "sql": "ALTER TABLE Datasets ADD COLUMN score REAL DEFAULT 0 NOT NULL;\nALTER TABLE Datasets ADD COLUMN tags TEXT DEFAULT '[]' NOT NULL;\nALTER TABLE Datasets ADD COLUMN note TEXT DEFAULT '' NOT NULL;\nALTER TABLE Datasets ADD COLUMN other TEXT DEFAULT '' NOT NULL;\nALTER TABLE Projects ADD COLUMN cleanPrompt TEXT DEFAULT '' NOT NULL;"
+  },
+  {
+    "version": "1.5.0",
+    "sql": "CREATE TABLE IF NOT EXISTS CustomPrompts (\n  id VARCHAR(255) NOT NULL,\n  projectId VARCHAR(255) NOT NULL,\n  promptType VARCHAR(255) NOT NULL,\n  promptKey VARCHAR(255) NOT NULL,\n  language VARCHAR(10) NOT NULL,\n  content TEXT NOT NULL,\n  isActive BOOLEAN DEFAULT 1 NOT NULL,\n  createAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  updateAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (id),\n  FOREIGN KEY (projectId) REFERENCES Projects(id) ON DELETE CASCADE,\n  UNIQUE (projectId, promptType, promptKey, language)\n);\n\nCREATE INDEX idx_customprompts_projectId ON CustomPrompts(projectId);\nCREATE INDEX idx_customprompts_project_type ON CustomPrompts(projectId, promptType);\nCREATE INDEX idx_customprompts_project_language ON CustomPrompts(projectId, language);"
   }
 ]

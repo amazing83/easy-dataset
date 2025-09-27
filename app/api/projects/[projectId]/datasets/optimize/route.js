@@ -57,7 +57,7 @@ export async function POST(request, { params }) {
     }
 
     // 生成优化后的答案和思维链
-    const prompt = getNewAnswerPrompt(language, { question, answer, cot, advice, chunkContent });
+    const prompt = await getNewAnswerPrompt(language, { question, answer, cot, advice, chunkContent }, projectId);
 
     const response = await llmClient.getResponse(prompt);
 
