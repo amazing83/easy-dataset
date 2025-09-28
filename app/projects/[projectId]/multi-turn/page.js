@@ -85,7 +85,7 @@ export default function MultiTurnDatasetPage({ params }) {
 
       const response = await fetch(`/api/projects/${projectId}/dataset-conversations?${params.toString()}`);
       if (!response.ok) {
-        throw new Error('获取数据失败');
+        throw new Error(t('datasets.fetchDataFailed'));
       }
 
       const data = await response.json();
@@ -93,7 +93,7 @@ export default function MultiTurnDatasetPage({ params }) {
       setTotal(data.total || 0);
     } catch (error) {
       console.error('获取多轮对话数据集失败:', error);
-      toast.error(error.message || '获取数据失败');
+      toast.error(error.message || t('datasets.fetchDataFailed'));
     } finally {
       setLoading(false);
     }
@@ -106,7 +106,7 @@ export default function MultiTurnDatasetPage({ params }) {
       const response = await fetch(`/api/projects/${projectId}/dataset-conversations/export`);
 
       if (!response.ok) {
-        throw new Error('导出失败');
+        throw new Error(t('datasets.exportFailed'));
       }
 
       const data = await response.json();
@@ -123,10 +123,10 @@ export default function MultiTurnDatasetPage({ params }) {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success('导出成功');
+      toast.success(t('datasets.exportSuccess'));
     } catch (error) {
       console.error('导出失败:', error);
-      toast.error(error.message || '导出失败');
+      toast.error(error.message || t('datasets.exportFailed'));
     } finally {
       setExportLoading(false);
     }
@@ -134,7 +134,7 @@ export default function MultiTurnDatasetPage({ params }) {
 
   // 删除对话数据集
   const handleDelete = async conversationId => {
-    if (!confirm('确认删除这个多轮对话数据集吗？此操作不可恢复。')) {
+    if (!confirm(t('datasets.confirmDeleteConversation'))) {
       return;
     }
 
@@ -144,14 +144,14 @@ export default function MultiTurnDatasetPage({ params }) {
       });
 
       if (!response.ok) {
-        throw new Error('删除失败');
+        throw new Error(t('datasets.deleteFailed'));
       }
 
-      toast.success('删除成功');
+      toast.success(t('datasets.deleteSuccess'));
       fetchConversations();
     } catch (error) {
       console.error('删除失败:', error);
-      toast.error(error.message || '删除失败');
+      toast.error(error.message || t('datasets.deleteFailed'));
     }
   };
 
@@ -191,10 +191,10 @@ export default function MultiTurnDatasetPage({ params }) {
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
-          {t('datasets.multiTurn', '多轮对话数据集')}
+          {t('datasets.multiTurn')}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          管理和查看多轮对话数据集，支持 ShareGPT 格式导出
+          {t('settings.multiTurnDescription')}
         </Typography>
       </Box>
 
@@ -203,7 +203,7 @@ export default function MultiTurnDatasetPage({ params }) {
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField
             size="small"
-            placeholder="搜索问题、标签、备注..."
+            placeholder={t('datasets.searchPlaceholder')}
             value={searchKeyword}
             onChange={e => setSearchKeyword(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && fetchConversations(0)}
@@ -218,7 +218,7 @@ export default function MultiTurnDatasetPage({ params }) {
           />
 
           <Button variant="outlined" startIcon={<FilterIcon />} onClick={() => setFilterDialogOpen(true)}>
-            筛选
+            {t('datasets.moreFilters')}
           </Button>
 
           <Button
@@ -227,7 +227,7 @@ export default function MultiTurnDatasetPage({ params }) {
             onClick={handleExport}
             disabled={exportLoading}
           >
-            {exportLoading ? '导出中...' : '导出'}
+            {exportLoading ? t('datasets.exporting') : t('exportDialog.export')}
           </Button>
         </Box>
       </Paper>
@@ -237,13 +237,13 @@ export default function MultiTurnDatasetPage({ params }) {
         <Table>
           <TableHead>
             <TableRow sx={{ bgcolor: 'action.hover' }}>
-              <TableCell>首轮问题</TableCell>
-              <TableCell>对话场景</TableCell>
-              <TableCell>对话轮数</TableCell>
-              <TableCell>使用模型</TableCell>
-              <TableCell>评分</TableCell>
-              <TableCell>创建时间</TableCell>
-              <TableCell align="center">操作</TableCell>
+              <TableCell>{t('datasets.firstQuestion')}</TableCell>
+              <TableCell>{t('datasets.conversationScenario')}</TableCell>
+              <TableCell>{t('datasets.conversationRounds')}</TableCell>
+              <TableCell>{t('datasets.modelUsed')}</TableCell>
+              <TableCell>{t('datasets.rating')}</TableCell>
+              <TableCell>{t('datasets.createTime')}</TableCell>
+              <TableCell align="center">{t('common.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -257,7 +257,7 @@ export default function MultiTurnDatasetPage({ params }) {
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
                   <Typography variant="body1" color="text.secondary">
-                    暂无多轮对话数据集
+                    {t('datasets.noConversations')}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -270,7 +270,7 @@ export default function MultiTurnDatasetPage({ params }) {
                     </Typography>
                     {conversation.confirmed && (
                       <Chip
-                        label="已确认"
+                        label={t('datasets.confirmed')}
                         size="small"
                         color="success"
                         variant="outlined"
@@ -280,7 +280,7 @@ export default function MultiTurnDatasetPage({ params }) {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={conversation.scenario || '未设置'}
+                      label={conversation.scenario || t('datasets.notSet')}
                       size="small"
                       variant="outlined"
                       color={conversation.scenario ? 'primary' : 'default'}
@@ -296,7 +296,7 @@ export default function MultiTurnDatasetPage({ params }) {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={conversation.score > 0 ? `${conversation.score}/5` : '未评分'}
+                      label={conversation.score > 0 ? `${conversation.score}/5` : t('datasets.notRated')}
                       size="small"
                       variant="outlined"
                       color={conversation.score > 3 ? 'success' : conversation.score > 0 ? 'warning' : 'default'}
@@ -306,12 +306,12 @@ export default function MultiTurnDatasetPage({ params }) {
                     <Typography variant="caption">{new Date(conversation.createAt).toLocaleDateString()}</Typography>
                   </TableCell>
                   <TableCell align="center">
-                    <Tooltip title="查看详情">
+                    <Tooltip title={t('datasets.viewDetails')}>
                       <IconButton size="small" color="primary" onClick={() => handleView(conversation.id)}>
                         <ViewIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="删除">
+                    <Tooltip title={t('common.delete')}>
                       <IconButton size="small" color="error" onClick={() => handleDelete(conversation.id)}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -333,37 +333,36 @@ export default function MultiTurnDatasetPage({ params }) {
             setRowsPerPage(parseInt(event.target.value, 10));
             setPage(0);
           }}
-          labelRowsPerPage="每页显示:"
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} 共 ${count} 条`}
+          labelRowsPerPage={t('datasets.rowsPerPage')}
         />
       </TableContainer>
 
       {/* 筛选对话框 */}
       <Dialog open={filterDialogOpen} onClose={() => setFilterDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>筛选条件</DialogTitle>
+        <DialogTitle>{t('common.filterConditions')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField
-              label="角色A设定"
+              label={t('settings.multiTurnRoleA')}
               value={filters.roleA}
               onChange={e => setFilters({ ...filters, roleA: e.target.value })}
               fullWidth
             />
             <TextField
-              label="角色B设定"
+              label={t('settings.multiTurnRoleB')}
               value={filters.roleB}
               onChange={e => setFilters({ ...filters, roleB: e.target.value })}
               fullWidth
             />
             <TextField
-              label="对话场景"
+              label={t('datasets.conversationScenario')}
               value={filters.scenario}
               onChange={e => setFilters({ ...filters, scenario: e.target.value })}
               fullWidth
             />
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
-                label="最低评分"
+                label={t('datasets.minScore')}
                 type="number"
                 inputProps={{ min: 0, max: 5, step: 0.1 }}
                 value={filters.scoreMin}
@@ -371,7 +370,7 @@ export default function MultiTurnDatasetPage({ params }) {
                 fullWidth
               />
               <TextField
-                label="最高评分"
+                label={t('datasets.maxScore')}
                 type="number"
                 inputProps={{ min: 0, max: 5, step: 0.1 }}
                 value={filters.scoreMax}
@@ -380,24 +379,24 @@ export default function MultiTurnDatasetPage({ params }) {
               />
             </Box>
             <FormControl fullWidth>
-              <InputLabel>确认状态</InputLabel>
+              <InputLabel>{t('datasets.filterConfirmationStatus')}</InputLabel>
               <Select
                 value={filters.confirmed}
                 onChange={e => setFilters({ ...filters, confirmed: e.target.value })}
-                label="确认状态"
+                label={t('datasets.filterConfirmationStatus')}
               >
-                <MenuItem value="">全部</MenuItem>
-                <MenuItem value="true">已确认</MenuItem>
-                <MenuItem value="false">未确认</MenuItem>
+                <MenuItem value="">{t('datasetSquare.categories.all')}</MenuItem>
+                <MenuItem value="true">{t('datasets.confirmed')}</MenuItem>
+                <MenuItem value="false">{t('datasets.unconfirmed')}</MenuItem>
               </Select>
             </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={resetFilters}>重置</Button>
-          <Button onClick={() => setFilterDialogOpen(false)}>取消</Button>
+          <Button onClick={resetFilters}>{t('datasets.resetFilters')}</Button>
+          <Button onClick={() => setFilterDialogOpen(false)}>{t('common.cancel')}</Button>
           <Button variant="contained" onClick={applyFilters}>
-            应用筛选
+            {t('datasets.applyFilters')}
           </Button>
         </DialogActions>
       </Dialog>

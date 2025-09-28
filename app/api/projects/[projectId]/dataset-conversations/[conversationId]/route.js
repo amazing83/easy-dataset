@@ -83,12 +83,17 @@ export async function PUT(request, { params }) {
     }
 
     // 只允许更新特定字段
-    const allowedFields = ['score', 'tags', 'note', 'confirmed', 'aiEvaluation'];
+    const allowedFields = ['score', 'tags', 'note', 'confirmed', 'aiEvaluation', 'messages'];
     const updateData = {};
 
     allowedFields.forEach(field => {
       if (body.hasOwnProperty(field)) {
-        updateData[field] = body[field];
+        if (field === 'messages') {
+          // 将messages数组转换为rawMessages字符串存储
+          updateData['rawMessages'] = JSON.stringify(body[field]);
+        } else {
+          updateData[field] = body[field];
+        }
       }
     });
 
