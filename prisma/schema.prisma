@@ -105,6 +105,7 @@ model Datasets {
   cot           String
   confirmed     Boolean  @default(false)
   score         Float    @default(0)
+  aiEvaluation  String   @default("") // AI评估结论
   tags          String   @default("")
   note          String   @default("")
   other         String   @default("") // 存储其他字段的JSON字符串

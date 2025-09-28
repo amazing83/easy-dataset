@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 /**
  * 数据集评分、标签、备注综合组件
  */
-export default function DatasetRatingSection({ dataset, projectId, onUpdate }) {
+export default function DatasetRatingSection({ dataset, projectId, onUpdate, currentDataset }) {
   const { t } = useTranslation();
   const [availableTags, setAvailableTags] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -131,10 +131,6 @@ export default function DatasetRatingSection({ dataset, projectId, onUpdate }) {
 
   return (
     <Paper sx={{ p: 3, mb: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        {t('datasets.evaluation', '数据集标注')}
-      </Typography>
-
       {/* 评分区域 */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
@@ -168,6 +164,19 @@ export default function DatasetRatingSection({ dataset, projectId, onUpdate }) {
         readOnly={loading}
         placeholder={t('datasets.addNote', '添加备注...')}
       />
+
+      <Divider sx={{ my: 2 }} />
+
+      {currentDataset.aiEvaluation && (
+        <Paper sx={{ p: 2, mt: 2 }}>
+          <Typography variant="subtitle2" gutterBottom color="primary">
+            {t('datasets.aiEvaluation')}
+          </Typography>
+          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+            {currentDataset.aiEvaluation}
+          </Typography>
+        </Paper>
+      )}
     </Paper>
   );
 }

@@ -41,6 +41,8 @@ import { processInParallel } from '@/lib/util/async';
 import axios from 'axios';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
+import { useAtomValue } from 'jotai';
+import { selectedModelInfoAtom } from '@/lib/store';
 
 // 删除确认对话框
 const DeleteConfirmDialog = ({ open, datasets, onClose, onConfirm, batch, progress, deleting }) => {
@@ -164,6 +166,8 @@ export default function DatasetsPage({ params }) {
   const [filterNoteKeyword, setFilterNoteKeyword] = useState('');
   const [availableTags, setAvailableTags] = useState([]);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [evaluatingIds, setEvaluatingIds] = useState([]);
+  const model = useAtomValue(selectedModelInfoAtom);
   const { t } = useTranslation();
   // 删除进度状态
   const [deleteProgress, setDeteleProgress] = useState({
@@ -461,6 +465,40 @@ export default function DatasetsPage({ params }) {
     });
   };
 
+  // 处理数据集评估
+  const handleEvaluateDataset = async dataset => {
+    try {
+      setEvaluatingIds(prev => [...prev, dataset.id]);
+
+      // 检查模型是否已配置
+      if (!model || !model.modelName) {
+        toast.error('请先选择模型');
+        return;
+      }
+
+      // 调用评估接口
+      const evaluateResponse = await fetch(`/api/projects/${projectId}/datasets/${dataset.id}/evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, language: 'zh-CN' })
+      });
+
+      const result = await evaluateResponse.json();
+      if (result.success) {
+        toast.success(`评估完成！评分：${result.data.score}/5`);
+        // 刷新数据集列表
+        await getDatasetsList();
+      } else {
+        toast.error(result.message || '评估失败');
+      }
+    } catch (error) {
+      console.error('评估失败:', error);
+      toast.error('评估失败: ' + error.message);
+    } finally {
+      setEvaluatingIds(prev => prev.filter(id => id !== dataset.id));
+    }
+  };
+
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -621,6 +659,7 @@ export default function DatasetsPage({ params }) {
         datasets={datasets.data}
         onViewDetails={handleViewDetails}
         onDelete={handleOpenDeleteDialog}
+        onEvaluate={handleEvaluateDataset}
         page={page}
         rowsPerPage={rowsPerPage}
         onPageChange={handlePageChange}
@@ -629,6 +668,7 @@ export default function DatasetsPage({ params }) {
         selectedIds={selectedIds}
         onSelectAll={handleSelectAll}
         onSelectItem={handleSelectItem}
+        evaluatingIds={evaluatingIds}
       />
 
       <DeleteConfirmDialog

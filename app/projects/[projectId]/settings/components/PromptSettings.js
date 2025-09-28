@@ -17,7 +17,7 @@ import { getLanguageFromPromptKey, shouldShowPrompt } from './promptUtils';
  */
 export default function PromptSettings() {
   const { projectId } = useParams();
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const { showSuccess, showErrorMessage, SnackbarComponent } = useSnackbar();
 
   // 基础状态
@@ -176,16 +176,16 @@ export default function PromptSettings() {
       const data = await response.json();
 
       if (data.success) {
-        showSuccess('已恢复为默认提示词');
+        showSuccess(t('settings.prompts.restoreSuccess'));
         // 先重新加载数据，然后强制刷新内容
         await loadPromptData();
         await loadPromptContent(true); // 强制刷新
       } else {
-        showErrorMessage(data.message || '恢复默认提示词失败');
+        showErrorMessage(data.message || t('settings.prompts.restoreFailed'));
       }
     } catch (error) {
-      console.error('删除提示词出错:', error);
-      showErrorMessage('恢复默认提示词失败');
+      console.error(t('settings.prompts.deleteError'), error);
+      showErrorMessage(t('settings.prompts.restoreFailed'));
     } finally {
       setLoading(false);
     }
@@ -205,17 +205,17 @@ export default function PromptSettings() {
       const data = await response.json();
 
       if (data.success) {
-        showSuccess('提示词保存成功');
+        showSuccess(t('settings.prompts.saveSuccess'));
         setEditDialog({ ...editDialog, open: false });
         // 先重新加载数据，然后强制刷新内容
         await loadPromptData();
         await loadPromptContent(true); // 强制刷新
       } else {
-        showErrorMessage(data.message || '提示词保存失败');
+        showErrorMessage(data.message || t('settings.prompts.saveFailed'));
       }
     } catch (error) {
-      console.error('保存提示词出错:', error);
-      showErrorMessage('提示词保存失败');
+      console.error(t('settings.prompts.saveError'), error);
+      showErrorMessage(t('settings.prompts.saveFailed'));
     } finally {
       setLoading(false);
     }
@@ -272,7 +272,7 @@ export default function PromptSettings() {
           }
         }
       } catch (error) {
-        console.error('获取最新提示词内容失败:', error);
+        console.error(t('settings.prompts.fetchContentError'), error);
       }
     } else {
       // 使用缓存的状态
@@ -385,7 +385,7 @@ export default function PromptSettings() {
       {/* 编辑提示词对话框 */}
       <PromptEditDialog
         open={editDialog.open}
-        title={editDialog.isNew ? '创建自定义提示词' : '编辑提示词'}
+        title={editDialog.isNew ? t('settings.prompts.createCustomPrompt') : t('settings.prompts.editPrompt')}
         promptType={editDialog.promptType}
         promptKey={editDialog.promptKey}
         content={editDialog.content}
