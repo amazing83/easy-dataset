@@ -400,6 +400,7 @@
     "fileFormat": "File Format",
     "systemPrompt": "System Prompt",
     "systemPromptPlaceholder": "Please enter system prompt...",
+    "ReasoninglanguagePlaceholder": "Please enter Reasoning language : English or Chinese or others",
     "onlyConfirmed": "Only export confirmed data",
     "example": "Format Example",
     "confirmExport": "Confirm Export",
@@ -407,7 +408,9 @@
     "cotDescription": "Includes the reasoning process before the final answer",
     "customFormat": "Custom Format",
     "customFormatSettings": "Custom Format Settings",
-    "questionFieldName": "Question Field Name"
+    "questionFieldName": "Question Field Name",
+    "multilingualThinkingFormat": "Multilingual‑Thinking",
+    "Reasoninglanguage": "Reasoning language"
   },
   "import": {
     "title": "Import",

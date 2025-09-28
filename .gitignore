@@ -18,3 +18,6 @@ mock-login-callback.ts
 /local-db
 prisma/local-db/db.sqlite
 /local-db2
+app/api/projects/\[projectId]/llamaFactory/generate/route.js.bak
+README.md.bak
+patch1.diff
