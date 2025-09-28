@@ -30,6 +30,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import { useRouter } from 'next/navigation';
 import ExportDatasetDialog from '@/components/ExportDatasetDialog';
 import ExportProgressDialog from '@/components/ExportProgressDialog';
@@ -167,6 +168,7 @@ export default function DatasetsPage({ params }) {
   const [availableTags, setAvailableTags] = useState([]);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [evaluatingIds, setEvaluatingIds] = useState([]);
+  const [batchEvaluating, setBatchEvaluating] = useState(false);
   const model = useAtomValue(selectedModelInfoAtom);
   const { t } = useTranslation();
   // 删除进度状态
@@ -472,7 +474,7 @@ export default function DatasetsPage({ params }) {
 
       // 检查模型是否已配置
       if (!model || !model.modelName) {
-        toast.error('请先选择模型');
+        toast.error(t('datasets.selectModelFirst', '请先选择模型'));
         return;
       }
 
@@ -485,17 +487,50 @@ export default function DatasetsPage({ params }) {
 
       const result = await evaluateResponse.json();
       if (result.success) {
-        toast.success(`评估完成！评分：${result.data.score}/5`);
+        toast.success(t('datasets.evaluateSuccess', '评估完成！评分：{{score}}/5', { score: result.data.score }));
         // 刷新数据集列表
         await getDatasetsList();
       } else {
-        toast.error(result.message || '评估失败');
+        toast.error(result.message || t('datasets.evaluateFailed', '评估失败'));
       }
     } catch (error) {
       console.error('评估失败:', error);
-      toast.error('评估失败: ' + error.message);
+      toast.error(t('datasets.evaluateError', '评估失败: {{error}}', { error: error.message }));
     } finally {
       setEvaluatingIds(prev => prev.filter(id => id !== dataset.id));
+    }
+  };
+
+  // 处理批量评估
+  const handleBatchEvaluate = async () => {
+    try {
+      setBatchEvaluating(true);
+
+      // 检查模型是否已配置
+      if (!model || !model.modelName) {
+        toast.error(t('datasets.selectModelFirst', '请先选择模型'));
+        return;
+      }
+
+      // 调用批量评估接口
+      const response = await fetch(`/api/projects/${projectId}/datasets/batch-evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, language: 'zh-CN' })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        toast.success(t('datasets.batchEvaluateStarted', '批量评估任务已启动，将在后台进行处理'));
+        router.push(`/projects/${projectId}/tasks`);
+      } else {
+        toast.error(result.message || t('datasets.batchEvaluateStartFailed', '启动批量评估失败'));
+      }
+    } catch (error) {
+      console.error('批量评估失败:', error);
+      toast.error(t('datasets.batchEvaluateFailed', '批量评估失败: {{error}}', { error: error.message }));
+    } finally {
+      setBatchEvaluating(false);
     }
   };
 
@@ -540,18 +575,6 @@ export default function DatasetsPage({ params }) {
             gap: 2
           }}
         >
-          <Box>
-            <Typography variant="h4" fontWeight="bold" sx={{ mb: 0.5 }}>
-              {t('datasets.management')}
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {t('datasets.stats', {
-                total: datasets.total,
-                confirmed: datasets.confirmedCount,
-                percentage: datasets.total > 0 ? ((datasets.confirmedCount / datasets.total) * 100).toFixed(2) : 0
-              })}
-            </Typography>
-          </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Paper
               component="form"
@@ -605,6 +628,17 @@ export default function DatasetsPage({ params }) {
               sx={{ borderRadius: 2 }}
             >
               {t('datasets.moreFilters')}
+            </Button>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<AssessmentIcon />}
+              sx={{ borderRadius: 2 }}
+              onClick={handleBatchEvaluate}
+              disabled={batchEvaluating}
+            >
+              {batchEvaluating ? t('datasets.evaluating', '评估中...') : t('datasets.batchEvaluate', '批量评估')}
             </Button>
             <Button
               variant="outlined"
@@ -755,7 +789,10 @@ export default function DatasetsPage({ params }) {
                 sx={{ mt: 1 }}
               />
               <Typography variant="caption" color="text.secondary">
-                {filterScoreRange[0]} - {filterScoreRange[1]} 分
+                {t('datasets.scoreRange', '{{min}} - {{max}} 分', {
+                  min: filterScoreRange[0],
+                  max: filterScoreRange[1]
+                })}
               </Typography>
             </Box>
           </Box>

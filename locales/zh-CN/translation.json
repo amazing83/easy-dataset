@@ -556,7 +556,17 @@
     "filterDistill": "是否蒸馏数据集",
     "filterDistillYes": "蒸馏数据集",
     "filterDistillNo": "非蒸馏数据集",
-    "evaluate": "质量评估"
+    "evaluate": "质量评估",
+    "evaluating": "评估中...",
+    "batchEvaluate": "自动质量评估",
+    "selectModelFirst": "请先选择模型",
+    "evaluateSuccess": "评估完成！评分：{{score}}/5",
+    "evaluateFailed": "评估失败",
+    "evaluateError": "评估失败: {{error}}",
+    "batchEvaluateStarted": "批量评估任务已启动，将在后台进行处理",
+    "batchEvaluateStartFailed": "启动批量评估失败",
+    "batchEvaluateFailed": "批量评估失败: {{error}}",
+    "scoreRange": "{{min}} - {{max}} 分"
   },
   "rating": {
     "veryPoor": "很差",

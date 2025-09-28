@@ -3,7 +3,7 @@
  */
 
 /**
- * 根据评分获取对应的颜色和标签
+ * 根据评分获取对应的颜色和标签（不包含国际化）
  * @param {number} score - 评分 (0-5)
  * @returns {object} - 包含颜色、背景色和标签的对象
  */
@@ -51,6 +51,55 @@ export const getRatingConfig = score => {
       variant: 'unrated'
     };
   }
+};
+
+/**
+ * 根据评分获取对应的颜色和国际化标签
+ * @param {number} score - 评分 (0-5)
+ * @param {function} t - 国际化翻译函数
+ * @returns {object} - 包含颜色、背景色和国际化标签的对象
+ */
+export const getRatingConfigI18n = (score, t) => {
+  const baseConfig = getRatingConfig(score);
+
+  // 根据variant获取对应的翻译键
+  let translationKey;
+  let fallbackText;
+
+  switch (baseConfig.variant) {
+    case 'excellent':
+      translationKey = 'datasets.ratingExcellent';
+      fallbackText = '优秀';
+      break;
+    case 'good':
+      translationKey = 'datasets.ratingGood';
+      fallbackText = '良好';
+      break;
+    case 'average':
+      translationKey = 'datasets.ratingAverage';
+      fallbackText = '一般';
+      break;
+    case 'poor':
+      translationKey = 'datasets.ratingPoor';
+      fallbackText = '较差';
+      break;
+    case 'very-poor':
+      translationKey = 'datasets.ratingVeryPoor';
+      fallbackText = '很差';
+      break;
+    case 'unrated':
+      translationKey = 'datasets.ratingUnrated';
+      fallbackText = '未评分';
+      break;
+    default:
+      translationKey = 'datasets.ratingUnrated';
+      fallbackText = '未评分';
+  }
+
+  return {
+    ...baseConfig,
+    label: t(translationKey, fallbackText)
+  };
 };
 
 /**

@@ -25,7 +25,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import StarIcon from '@mui/icons-material/Star';
 import { useTranslation } from 'react-i18next';
-import { getRatingConfig, formatScore } from '@/components/datasets/utils/ratingUtils';
+import { getRatingConfigI18n, formatScore } from '@/components/datasets/utils/ratingUtils';
 
 // 数据集列表组件
 const DatasetList = ({
@@ -53,7 +53,7 @@ const DatasetList = ({
       : theme.palette.getContrastText(theme.palette.primary.contrastText);
 
   const RatingChip = ({ score }) => {
-    const config = getRatingConfig(score);
+    const config = getRatingConfigI18n(score, t);
     return (
       <Chip
         icon={<StarIcon sx={{ fontSize: '14px !important' }} />}

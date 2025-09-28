@@ -621,7 +621,17 @@
     "aiEvaluation": "AI Quality Assessment",
     "updateSuccess": "Update successful",
     "updateFailed": "Update failed",
-    "evaluate": "Evaluate"
+    "evaluate": "Evaluate",
+    "evaluating": "Evaluating...",
+    "batchEvaluate": "Batch Evaluate",
+    "selectModelFirst": "Please select a model first",
+    "evaluateSuccess": "Evaluation completed! Score: {{score}}/5",
+    "evaluateFailed": "Evaluation failed",
+    "evaluateError": "Evaluation failed: {{error}}",
+    "batchEvaluateStarted": "Batch evaluation task started, processing in background",
+    "batchEvaluateStartFailed": "Failed to start batch evaluation",
+    "batchEvaluateFailed": "Batch evaluation failed: {{error}}",
+    "scoreRange": "{{min}} - {{max}} points"
   },
   "rating": {
     "veryPoor": "Very Poor",
