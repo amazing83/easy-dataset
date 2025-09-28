@@ -41,6 +41,8 @@ import DatasetOutlinedIcon from '@mui/icons-material/DatasetOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import ChatIcon from '@mui/icons-material/Chat';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { useSetAtom } from 'jotai/index';
@@ -60,6 +62,10 @@ export default function Navbar({ projects = [], currentProject }) {
   const [moreMenuAnchor, setMoreMenuAnchor] = useState(null);
   const isMoreMenuOpen = Boolean(moreMenuAnchor);
 
+  // 数据集菜单状态
+  const [datasetMenuAnchor, setDatasetMenuAnchor] = useState(null);
+  const isDatasetMenuOpen = Boolean(datasetMenuAnchor);
+
   // 处理更多菜单打开
   const handleMoreMenuOpen = event => {
     setMoreMenuAnchor(event.currentTarget);
@@ -78,6 +84,21 @@ export default function Navbar({ projects = [], currentProject }) {
   // 处理菜单区域的鼠标离开
   const handleMenuMouseLeave = () => {
     setMoreMenuAnchor(null);
+  };
+
+  // 处理数据集菜单悬浮打开
+  const handleDatasetMenuHover = event => {
+    setDatasetMenuAnchor(event.currentTarget);
+  };
+
+  // 关闭数据集菜单
+  const handleDatasetMenuClose = () => {
+    setDatasetMenuAnchor(null);
+  };
+
+  // 处理数据集菜单区域的鼠标离开
+  const handleDatasetMenuMouseLeave = () => {
+    setDatasetMenuAnchor(null);
   };
 
   const handleProjectChange = event => {
@@ -215,7 +236,9 @@ export default function Navbar({ projects = [], currentProject }) {
               value={
                 pathname.includes('/settings') || pathname.includes('/playground') || pathname.includes('/datasets-sq')
                   ? 'more'
-                  : pathname
+                  : pathname.includes('/datasets') || pathname.includes('/multi-turn')
+                    ? 'datasets'
+                    : pathname
               }
               textColor="inherit"
               indicatorColor="secondary"
@@ -282,19 +305,18 @@ export default function Navbar({ projects = [], currentProject }) {
               <Tab
                 icon={
                   <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                    <DatasetOutlinedIcon fontSize="small" />
+                    <ArrowDropDownIcon fontSize="small" sx={{ ml: 0.5 }} />
                   </Box>
                 }
                 iconPosition="start"
                 label={t('datasets.management')}
-                value={`/projects/${selectedProject}/datasets`}
-                component={Link}
-                href={`/projects/${selectedProject}/datasets`}
+                value="datasets"
+                onMouseEnter={handleDatasetMenuHover}
               />
               <Tab
                 icon={
                   <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                    <MoreVertIcon fontSize="small" />
+                    <ArrowDropDownIcon fontSize="small" sx={{ ml: 0.5 }} />
                   </Box>
                 }
                 iconPosition="start"
@@ -305,6 +327,47 @@ export default function Navbar({ projects = [], currentProject }) {
             </Tabs>
           </Box>
         )}
+
+        {/* 数据集菜单 */}
+        <Menu
+          anchorEl={datasetMenuAnchor}
+          open={isDatasetMenuOpen}
+          onClose={handleDatasetMenuClose}
+          PaperProps={{
+            elevation: 2,
+            sx: { mt: 1.5, borderRadius: 2, minWidth: 200 },
+            onMouseLeave: handleDatasetMenuMouseLeave
+          }}
+          transformOrigin={{ horizontal: 'center', vertical: 'top' }}
+          anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}
+          MenuListProps={{
+            dense: true,
+            onMouseLeave: handleDatasetMenuMouseLeave
+          }}
+        >
+          <MenuItem
+            component={Link}
+            href={`/projects/${selectedProject}/datasets`}
+            onClick={handleDatasetMenuClose}
+            selected={pathname === `/projects/${selectedProject}/datasets`}
+          >
+            <ListItemIcon>
+              <DatasetOutlinedIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={t('datasets.singleTurn', '单轮问答数据集')} />
+          </MenuItem>
+          <MenuItem
+            component={Link}
+            href={`/projects/${selectedProject}/multi-turn`}
+            onClick={handleDatasetMenuClose}
+            selected={pathname === `/projects/${selectedProject}/multi-turn`}
+          >
+            <ListItemIcon>
+              <ChatIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={t('datasets.multiTurn', '多轮对话数据集')} />
+          </MenuItem>
+        </Menu>
 
         {/* 更多菜单 */}
         <Menu

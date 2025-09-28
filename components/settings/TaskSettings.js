@@ -28,6 +28,21 @@ import useTaskSettings from '@/hooks/useTaskSettings';
 export default function TaskSettings({ projectId }) {
   const { t } = useTranslation();
   const { taskSettings, setTaskSettings, loading, error, success, setSuccess } = useTaskSettings(projectId);
+
+  // 确保 multiTurnRounds 有正确的初始值
+  useEffect(() => {
+    if (
+      !loading &&
+      taskSettings &&
+      (taskSettings.multiTurnRounds === undefined || taskSettings.multiTurnRounds === null)
+    ) {
+      setTaskSettings(prev => ({
+        ...prev,
+        multiTurnRounds: 3 // 默认值
+      }));
+    }
+  }, [loading, taskSettings, setTaskSettings]);
+
   // 处理设置变更
   const handleSettingChange = e => {
     const { name, value } = e.target;
@@ -430,6 +445,89 @@ export default function TaskSettings({ projectId }) {
                 onChange={handleSettingChange}
                 type="password"
               />
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+      {/* 多轮对话数据集设置 */}
+      <Card style={{ marginBottom: 20 }}>
+        <CardContent>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" gutterBottom>
+                {t('settings.multiTurnSettings')}
+              </Typography>
+              <Box sx={{ px: 2, py: 1 }}>
+                {/* 系统提示词 */}
+                <TextField
+                  fullWidth
+                  label={t('settings.multiTurnSystemPrompt')}
+                  name="multiTurnSystemPrompt"
+                  value={taskSettings.multiTurnSystemPrompt || ''}
+                  onChange={handleSettingChange}
+                  multiline
+                  rows={3}
+                  helperText={t('settings.multiTurnSystemPromptHelper')}
+                  sx={{ mb: 2 }}
+                />
+
+                {/* 对话场景 */}
+                <TextField
+                  fullWidth
+                  label={t('settings.multiTurnScenario')}
+                  name="multiTurnScenario"
+                  value={taskSettings.multiTurnScenario || ''}
+                  onChange={handleSettingChange}
+                  helperText={t('settings.multiTurnScenarioHelper')}
+                  sx={{ mb: 2 }}
+                />
+
+                {/* 对话轮数 */}
+                <Typography id="multi-turn-rounds-slider" gutterBottom sx={{ mt: 2 }}>
+                  {t('settings.multiTurnRounds', { rounds: taskSettings.multiTurnRounds || 3 })}
+                </Typography>
+                <Slider
+                  value={taskSettings.multiTurnRounds || 3}
+                  onChange={handleSliderChange('multiTurnRounds')}
+                  aria-labelledby="multi-turn-rounds-slider"
+                  valueLabelDisplay="auto"
+                  step={1}
+                  marks
+                  min={2}
+                  max={8}
+                  sx={{ mb: 2 }}
+                />
+
+                {/* 角色A设定 */}
+                <TextField
+                  fullWidth
+                  label={t('settings.multiTurnRoleA')}
+                  name="multiTurnRoleA"
+                  value={taskSettings.multiTurnRoleA || ''}
+                  onChange={handleSettingChange}
+                  multiline
+                  rows={2}
+                  helperText={t('settings.multiTurnRoleAHelper')}
+                  sx={{ mb: 2 }}
+                />
+
+                {/* 角色B设定 */}
+                <TextField
+                  fullWidth
+                  label={t('settings.multiTurnRoleB')}
+                  name="multiTurnRoleB"
+                  value={taskSettings.multiTurnRoleB || ''}
+                  onChange={handleSettingChange}
+                  multiline
+                  rows={2}
+                  helperText={t('settings.multiTurnRoleBHelper')}
+                  sx={{ mb: 2 }}
+                />
+
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                  {t('settings.multiTurnDescription')}
+                </Typography>
+              </Box>
             </Grid>
           </Grid>
         </CardContent>

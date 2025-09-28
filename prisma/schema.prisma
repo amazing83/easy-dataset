@@ -24,6 +24,7 @@ model Projects {
   updateAt             DateTime      @updatedAt
   Questions            Questions[]
   Datasets             Datasets[]
+  DatasetConversations DatasetConversations[]
   Chunks               Chunks[]
   ModelConfig          ModelConfig[]
   UploadFiles          UploadFiles[]
@@ -109,6 +110,32 @@ model Datasets {
   tags          String   @default("")
   note          String   @default("")
   other         String   @default("") // 存储其他字段的JSON字符串
+  createAt      DateTime @default(now())
+  updateAt      DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model DatasetConversations {
+  id            String   @id @default(nanoid())
+  project       Projects @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId     String
+  questionId    String   // 第一个问题 Id（初始问题）
+  question      String   // 第一个问题（初始问题）
+  chunkId       String   // 基于哪个文本块生成
+  model         String
+  questionLabel String
+  score         Float    @default(0)
+  aiEvaluation  String   @default("") // AI评估结论
+  tags          String   @default("")
+  note          String   @default("")
+  scenario      String   // 对话场景（教学/咨询/讨论等）
+  roleA         String   // 角色A设定
+  roleB         String   // 角色B设定  
+  turnCount     Int      // 实际轮数
+  maxTurns      Int      // 设置的最大轮数
+  rawMessages   String   // JSON存储完整对话（和 ShareGPT 格式保持完全一致）
+  confirmed     Boolean  @default(false)
   createAt      DateTime @default(now())
   updateAt      DateTime @updatedAt
 

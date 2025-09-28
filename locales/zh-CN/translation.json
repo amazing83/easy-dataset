@@ -83,6 +83,17 @@
     "visionConcurrencyLimit": "视觉模型并发限制",
     "huggingfaceSettings": "Hugging Face 设置",
     "huggingfaceToken": "Hugging Face Token",
+    "multiTurnSettings": "多轮对话数据集设置",
+    "multiTurnSystemPrompt": "系统提示词",
+    "multiTurnSystemPromptHelper": "设定AI助手的身份和行为规范",
+    "multiTurnScenario": "对话场景",
+    "multiTurnScenarioHelper": "描述对话的具体场景和目标",
+    "multiTurnRounds": "对话轮数：{{rounds}} 轮",
+    "multiTurnRoleA": "角色A设定（用户）",
+    "multiTurnRoleAHelper": "定义用户角色的身份和特征",
+    "multiTurnRoleB": "角色B设定（助手）",
+    "multiTurnRoleBHelper": "定义助手角色的身份和特征",
+    "multiTurnDescription": "多轮对话配置用于生成连贯的多轮对话数据集，支持自定义角色和场景",
     "prompts": {
       "selectPromptFirst": "请在左侧选择一个提示词",
       "customized": "已自定义",
@@ -147,7 +158,10 @@
     "questionPlaceholder": "请输入问题内容",
     "noChunkSelected": "请先选择文本块",
     "noTagSelected": "请选择标签",
-    "deleteConfirm": "确认要删除这个问题吗？"
+    "deleteConfirm": "确认要删除这个问题吗？",
+    "generateMultiTurn": "生成多轮对话",
+    "multiTurnNotConfigured": "请先在项目设置中配置多轮对话相关参数",
+    "multiTurnGenerated": "多轮对话数据集生成成功！"
   },
   "common": {
     "help": "帮助",
@@ -566,7 +580,9 @@
     "batchEvaluateStarted": "批量评估任务已启动，将在后台进行处理",
     "batchEvaluateStartFailed": "启动批量评估失败",
     "batchEvaluateFailed": "批量评估失败: {{error}}",
-    "scoreRange": "{{min}} - {{max}} 分"
+    "scoreRange": "{{min}} - {{max}} 分",
+    "singleTurn": "单轮问答数据集",
+    "multiTurn": "多轮对话数据集"
   },
   "rating": {
     "veryPoor": "很差",
