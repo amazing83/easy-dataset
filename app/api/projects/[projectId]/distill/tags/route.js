@@ -38,7 +38,11 @@ export async function POST(request, { params }) {
     const llmClient = new LLMClient(model);
 
     // 生成提示词
-    const prompt = distillTagsPrompt(language, { tagPath, parentTag, existingTags: existingTagNames, count });
+    const prompt = await distillTagsPrompt(
+      language,
+      { tagPath, parentTag, existingTags: existingTagNames, count },
+      projectId
+    );
 
     // 调用大模型生成标签
     const { answer } = await llmClient.getResponseWithCOT(prompt);

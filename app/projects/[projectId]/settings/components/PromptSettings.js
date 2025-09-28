@@ -10,7 +10,7 @@ import CategoryTabs from './CategoryTabs';
 import PromptList from './PromptList';
 import PromptDetail from './PromptDetail';
 import PromptEditDialog from './PromptEditDialog';
-import { getLanguageFromPromptKey } from './promptUtils';
+import { getLanguageFromPromptKey, shouldShowPrompt } from './promptUtils';
 
 /**
  * 提示词设置主组件
@@ -66,16 +66,19 @@ export default function PromptSettings() {
 
   // 初始化选择第一个分类和提示词
   useEffect(() => {
-    if (Object.keys(templates).length > 0 && !selectedCategory) {
+    if (Object.keys(templates).length > 0 && currentLanguage && !selectedCategory) {
       const firstCategory = Object.keys(templates)[0];
       setSelectedCategory(firstCategory);
 
-      const firstPrompt = Object.keys(templates[firstCategory]?.prompts || {})[0];
+      // 根据当前语言环境选择第一个匹配的提示词
+      const promptEntries = Object.keys(templates[firstCategory]?.prompts || {});
+      const firstPrompt = promptEntries.find(promptKey => shouldShowPrompt(promptKey, currentLanguage));
+
       if (firstPrompt) {
         setSelectedPrompt(firstPrompt);
       }
     }
-  }, [templates, selectedCategory]);
+  }, [templates, selectedCategory, currentLanguage]);
 
   // ======= API 操作函数 =======
 
@@ -101,11 +104,11 @@ export default function PromptSettings() {
   };
 
   // 加载提示词内容
-  const loadPromptContent = async () => {
+  const loadPromptContent = async (forceRefresh = false) => {
     if (!selectedPrompt) return;
     try {
       setLoading(true);
-      const content = await getCurrentPromptContent(selectedPrompt);
+      const content = await getCurrentPromptContent(selectedPrompt, forceRefresh);
       setPromptContent(content);
     } catch (error) {
       console.error('加载提示词内容出错:', error);
@@ -117,6 +120,9 @@ export default function PromptSettings() {
 
   // 加载默认提示词内容
   const loadDefaultContent = async (promptType, promptKey) => {
+    if (i18n.language === 'en' && !promptKey.endsWith('_EN')) {
+      promptKey += '_EN';
+    }
     try {
       const response = await fetchWithRetry(
         `/api/projects/${projectId}/default-prompts?promptType=${promptType}&promptKey=${promptKey}`
@@ -171,8 +177,9 @@ export default function PromptSettings() {
 
       if (data.success) {
         showSuccess('已恢复为默认提示词');
-        loadPromptData();
-        loadPromptContent();
+        // 先重新加载数据，然后强制刷新内容
+        await loadPromptData();
+        await loadPromptContent(true); // 强制刷新
       } else {
         showErrorMessage(data.message || '恢复默认提示词失败');
       }
@@ -200,8 +207,9 @@ export default function PromptSettings() {
       if (data.success) {
         showSuccess('提示词保存成功');
         setEditDialog({ ...editDialog, open: false });
-        loadPromptData();
-        loadPromptContent();
+        // 先重新加载数据，然后强制刷新内容
+        await loadPromptData();
+        await loadPromptContent(true); // 强制刷新
       } else {
         showErrorMessage(data.message || '提示词保存失败');
       }
@@ -235,8 +243,8 @@ export default function PromptSettings() {
     return customPrompts.some(p => p.promptType === promptType && p.promptKey === promptKey && p.language === language);
   };
 
-  // 获取当前提示词内容
-  const getCurrentPromptContent = async promptKey => {
+  // 获取当前提示词内容（直接从服务器获取最新数据）
+  const getCurrentPromptContent = async (promptKey, forceRefresh = false) => {
     if (!selectedCategory || !promptKey || !templates[selectedCategory]) return '';
 
     const language = getLanguageFromPromptKey(promptKey);
@@ -246,15 +254,39 @@ export default function PromptSettings() {
       return '';
     }
 
-    const existingPrompt = customPrompts.find(
-      p => p.promptType === promptType && p.promptKey === promptKey && p.language === language
-    );
+    // 如果需要强制刷新，直接从服务器获取
+    if (forceRefresh) {
+      try {
+        const response = await fetchWithRetry(
+          `/api/projects/${projectId}/custom-prompts?promptType=${promptType}&language=${language}`
+        );
+        const data = await response.json();
 
-    if (existingPrompt) {
-      return existingPrompt.content;
+        if (data.success) {
+          const existingPrompt = data.customPrompts.find(
+            p => p.promptType === promptType && p.promptKey === promptKey && p.language === language
+          );
+
+          if (existingPrompt) {
+            return existingPrompt.content;
+          }
+        }
+      } catch (error) {
+        console.error('获取最新提示词内容失败:', error);
+      }
     } else {
-      return await loadDefaultContent(promptType, promptKey);
+      // 使用缓存的状态
+      const existingPrompt = customPrompts.find(
+        p => p.promptType === promptType && p.promptKey === promptKey && p.language === language
+      );
+
+      if (existingPrompt) {
+        return existingPrompt.content;
+      }
     }
+
+    // 回退到默认内容
+    return await loadDefaultContent(promptType, promptKey);
   };
 
   // ======= 数据准备 =======
@@ -271,14 +303,20 @@ export default function PromptSettings() {
   // 处理分类变更
   const handleCategoryChange = newCategory => {
     setSelectedCategory(newCategory);
-    const firstPrompt = Object.keys(templates[newCategory]?.prompts || {})[0];
+    // 根据当前语言环境选择第一个匹配的提示词
+    const promptEntries = Object.keys(templates[newCategory]?.prompts || {});
+    console.log('所有提示词:', promptEntries);
+
+    const firstPrompt = promptEntries.find(promptKey => shouldShowPrompt(promptKey, currentLanguage));
+
     setSelectedPrompt(firstPrompt);
   };
 
   // 处理编辑按钮点击
   const handleEditButtonClick = () => {
     const promptType = templates[selectedCategory]?.prompts?.[selectedPrompt]?.type;
-    const language = getLanguageFromPromptKey(selectedPrompt);
+    // 使用当前界面语言而不是从 promptKey 推断的语言
+    const language = currentLanguage;
 
     if (promptType) {
       handleEditPrompt(promptType, selectedPrompt, language);
@@ -288,7 +326,8 @@ export default function PromptSettings() {
   // 处理删除按钮点击
   const handleDeleteButtonClick = () => {
     const promptType = templates[selectedCategory]?.prompts?.[selectedPrompt]?.type;
-    const language = getLanguageFromPromptKey(selectedPrompt);
+    // 使用当前界面语言而不是从 promptKey 推断的语言
+    const language = currentLanguage;
 
     if (promptType) {
       handleDeletePrompt(promptType, selectedPrompt, language);
