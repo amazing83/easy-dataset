@@ -29,6 +29,7 @@ class AutoDistillService {
       questionsPerTag,
       model,
       language,
+      datasetType = 'single-turn', // 新增数据集类型
       concurrencyLimit = 5,
       onProgress,
       onLog
@@ -96,15 +97,47 @@ class AutoDistillService {
         onLog
       });
 
-      // 生成数据集
-      await this.generateDatasetsForQuestions({
-        projectId,
-        model,
-        language,
-        concurrencyLimit,
-        onProgress,
-        onLog
-      });
+      // 根据数据集类型生成不同类型的数据集
+      if (datasetType === 'single-turn') {
+        // 只生成单轮对话数据集
+        await this.generateDatasetsForQuestions({
+          projectId,
+          model,
+          language,
+          concurrencyLimit,
+          onProgress,
+          onLog
+        });
+      } else if (datasetType === 'multi-turn') {
+        // 只生成多轮对话数据集
+        await this.generateMultiTurnDatasetsForQuestions({
+          projectId,
+          model,
+          language,
+          concurrencyLimit,
+          onProgress,
+          onLog
+        });
+      } else if (datasetType === 'both') {
+        // 先生成单轮对话数据集
+        await this.generateDatasetsForQuestions({
+          projectId,
+          model,
+          language,
+          concurrencyLimit,
+          onProgress,
+          onLog
+        });
+        // 再生成多轮对话数据集
+        await this.generateMultiTurnDatasetsForQuestions({
+          projectId,
+          model,
+          language,
+          concurrencyLimit,
+          onProgress,
+          onLog
+        });
+      }
 
       // 任务完成
       if (onProgress) {
@@ -391,11 +424,6 @@ class AutoDistillService {
                   updateType: 'increment'
                 });
               }
-
-              const questions = response.data
-                .map(r => r.question || r.content)
-                .slice(0, 3)
-                .join('\n'); // 只显示前3个问题以避免日志过长
               this.addLog(onLog, `Successfully generated ${response.data.length} questions for tag "${tag.label}"`);
             } catch (error) {
               console.error(`为标签 "${tag.label}" 生成问题失败:`, error);
@@ -506,30 +534,159 @@ class AutoDistillService {
           `Completed batch ${Math.min(i + concurrencyLimit, unansweredQuestions.length)}/${unansweredQuestions.length} of dataset generation`
         );
       }
+
+      this.addLog(onLog, 'Dataset generation completed');
     } catch (error) {
-      console.error('Failed to get questions:', error);
-      this.addLog(onLog, `Failed to get questions: ${error.message || 'Unknown error'}`);
+      console.error('Dataset generation failed:', error);
+      this.addLog(onLog, `Dataset generation error: ${error.message}`);
+      throw error;
     }
   }
 
   /**
-   * 生成单个数据集
-   * @param {Object} config - 配置信息
-   * @param {string} config.projectId - 项目ID
-   * @param {string} config.questionId - 问题ID
-   * @param {Object} config.questionInfo - 问题信息
-   * @param {Object} config.model - 模型信息
-   * @param {string} config.language - 语言
-   * @returns {Promise<Object>} - 数据集信息
+   * 为问题生成多轮对话数据集
+   */
+  async generateMultiTurnDatasetsForQuestions(config) {
+    const { projectId, model, language, concurrencyLimit = 2, onProgress, onLog } = config;
+
+    // 设置当前阶段
+    if (onProgress) {
+      onProgress({
+        stage: 'multi-turn-datasets'
+      });
+    }
+
+    this.addLog(onLog, 'Question generation completed, starting to generate multi-turn conversations...');
+
+    try {
+      // 获取项目的多轮对话配置
+      const configResponse = await axios.get(`/api/projects/${projectId}/tasks`);
+      const taskConfig = configResponse.data;
+
+      const multiTurnConfig = {
+        systemPrompt: taskConfig.multiTurnSystemPrompt || '',
+        scenario: taskConfig.multiTurnScenario || '',
+        rounds: taskConfig.multiTurnRounds || 3,
+        roleA: taskConfig.multiTurnRoleA || '',
+        roleB: taskConfig.multiTurnRoleB || ''
+      };
+
+      // 检查是否已配置必要的多轮对话设置
+      if (
+        !multiTurnConfig.scenario ||
+        !multiTurnConfig.roleA ||
+        !multiTurnConfig.roleB ||
+        !multiTurnConfig.rounds ||
+        multiTurnConfig.rounds < 1
+      ) {
+        throw new Error('项目未配置多轮对话参数，请先在项目设置中配置多轮对话相关参数');
+      }
+
+      // 获取所有已回答的问题（多轮对话需要基于已有答案的问题）
+      const response = await axios.get(`/api/projects/${projectId}/questions/tree?isDistill=true`);
+      const allQuestions = response.data;
+      const answeredQuestions = allQuestions;
+
+      if (answeredQuestions.length === 0) {
+        this.addLog(onLog, 'No answered questions found, skipping multi-turn conversation generation');
+        return;
+      }
+
+      // 获取已生成多轮对话的问题ID
+      const conversationsResponse = await axios.get(`/api/projects/${projectId}/dataset-conversations?pageSize=1000`);
+      const existingConversationIds = new Set(
+        (conversationsResponse.data.conversations || []).map(conv => conv.questionId)
+      );
+
+      // 筛选未生成多轮对话的问题
+      const questionsForMultiTurn = answeredQuestions.filter(q => !existingConversationIds.has(q.id));
+
+      // 更新多轮对话数据集总数和已生成数量
+      if (onProgress) {
+        onProgress({
+          multiTurnDatasetsTotal: answeredQuestions.length,
+          multiTurnDatasetsBuilt: answeredQuestions.length - questionsForMultiTurn.length
+        });
+      }
+
+      this.addLog(
+        onLog,
+        `Found ${questionsForMultiTurn.length} questions ready for multi-turn conversation generation...`
+      );
+      this.addLog(onLog, `Multi-turn generation concurrency limit: ${concurrencyLimit}`);
+
+      // 分批处理未生成多轮对话的问题，控制并发数
+      for (let i = 0; i < questionsForMultiTurn.length; i += concurrencyLimit) {
+        const batch = questionsForMultiTurn.slice(i, i + concurrencyLimit);
+
+        // 并行处理批次任务
+        await Promise.all(
+          batch.map(async question => {
+            const questionContent = `${question.label} 下的问题ID:${question.id}`;
+            this.addLog(onLog, `Generating multi-turn conversation for "${questionContent}"...`);
+
+            try {
+              // 调用生成多轮对话的函数
+              await this.generateSingleMultiTurnDataset({
+                projectId,
+                questionId: question.id,
+                questionInfo: question,
+                model,
+                language,
+                multiTurnConfig
+              });
+
+              // 更新进度
+              if (onProgress) {
+                onProgress({
+                  multiTurnDatasetsBuilt: 1,
+                  updateType: 'increment'
+                });
+              }
+
+              this.addLog(onLog, `Multi-turn conversation generated for "${questionContent}"`);
+            } catch (error) {
+              this.addLog(
+                onLog,
+                `Failed to generate multi-turn conversation for "${questionContent}": ${error.message}`
+              );
+            }
+          })
+        );
+      }
+
+      this.addLog(onLog, 'Multi-turn conversation generation completed');
+    } catch (error) {
+      console.error('Multi-turn dataset generation failed:', error);
+      this.addLog(onLog, `Multi-turn dataset generation error: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 生成单个问题的多轮对话数据集
+   */
+  async generateSingleMultiTurnDataset({ projectId, questionId, questionInfo, model, language, multiTurnConfig }) {
+    try {
+      const response = await axios.post(`/api/projects/${projectId}/dataset-conversations`, {
+        questionId,
+        ...multiTurnConfig,
+        model,
+        language
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Failed to generate multi-turn dataset:', error);
+      throw new Error(`Failed to generate multi-turn dataset: ${error.message}`);
+    }
+  }
+
+  /**
+   * 生成单个问题的数据集
    */
   async generateSingleDataset({ projectId, questionId, questionInfo, model, language }) {
     try {
-      // 构建请求参数
-      const params = {
-        model,
-        language: language || 'zh-CN'
-      };
-
       // 获取问题信息
       let question = questionInfo;
       if (!question) {

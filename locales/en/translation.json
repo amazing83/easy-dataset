@@ -884,7 +884,11 @@
     "stageCompleted": "Task Completed",
     "datasetsProgress": "Datasets Progress",
     "rootTopicHelperText": "By default, the project name is used as the top-level distillation theme. If you need to change it, please go to the project settings to modify the project name.",
-    "addChildTag": "Add Child Tag"
+    "addChildTag": "Add Child Tag",
+    "datasetType": "Dataset Type",
+    "singleTurnDataset": "Single-turn Dataset",
+    "multiTurnDataset": "Multi-turn Dataset",
+    "bothDatasetTypes": "Generate Both Dataset Types"
   },
   "tasks": {
     "pending": "{{count}} tasks are processing",

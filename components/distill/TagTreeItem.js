@@ -39,6 +39,8 @@ import QuestionListItem from './QuestionListItem';
  * @param {Object} props.processingQuestions - 正在处理的问题ID映射
  * @param {Function} props.onDeleteQuestion - 删除问题的回调
  * @param {Function} props.onGenerateDataset - 生成数据集的回调
+ * @param {Function} props.onGenerateMultiTurnDataset - 生成多轮对话数据集的回调
+ * @param {Object} props.processingMultiTurnQuestions - 正在生成多轮对话的问题ID映射
  * @param {Array} props.allQuestions - 所有问题列表（用于计算问题数量）
  * @param {Object} props.tagQuestions - 标签问题映射
  * @param {React.ReactNode} props.children - 子标签内容
@@ -56,6 +58,8 @@ export default function TagTreeItem({
   processingQuestions = {},
   onDeleteQuestion,
   onGenerateDataset,
+  onGenerateMultiTurnDataset,
+  processingMultiTurnQuestions = {},
   allQuestions = [],
   tagQuestions = {},
   children
@@ -213,8 +217,12 @@ export default function TagTreeItem({
                   question={question}
                   level={level}
                   processing={processingQuestions[question.id]}
+                  processingMultiTurn={processingMultiTurnQuestions[question.id]}
                   onDelete={e => onDeleteQuestion(question.id, e)}
                   onGenerateDataset={e => onGenerateDataset(question.id, question.question, e)}
+                  onGenerateMultiTurnDataset={
+                    onGenerateMultiTurnDataset ? e => onGenerateMultiTurnDataset(question.id, question, e) : undefined
+                  }
                 />
               ))
             ) : (

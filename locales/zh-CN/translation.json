@@ -870,7 +870,11 @@
     "stageCompleted": "任务已完成",
     "datasetsProgress": "数据集生成进度",
     "rootTopicHelperText": "默认以项目名称作为顶级蒸馏主题，如需更改，请到项目设置中更改项目名称。",
-    "addChildTag": "生成子标签"
+    "addChildTag": "生成子标签",
+    "datasetType": "数据集类型",
+    "singleTurnDataset": "单轮对话数据集",
+    "multiTurnDataset": "多轮对话数据集",
+    "bothDatasetTypes": "两种数据集都生成"
   },
   "tasks": {
     "pending": "有 {{count}} 个任务处理中",

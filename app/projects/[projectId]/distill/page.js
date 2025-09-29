@@ -40,7 +40,8 @@ export default function DistillPage() {
   const [distillStats, setDistillStats] = useState({
     tagsCount: 0,
     questionsCount: 0,
-    datasetsCount: 0
+    datasetsCount: 0,
+    multiTurnDatasetsCount: 0
   });
   const [distillProgress, setDistillProgress] = useState({
     stage: 'initializing',
@@ -50,6 +51,8 @@ export default function DistillPage() {
     questionsBuilt: 0,
     datasetsTotal: 0,
     datasetsBuilt: 0,
+    multiTurnDatasetsTotal: 0, // 新增多轮对话数据集总数
+    multiTurnDatasetsBuilt: 0, // 新增多轮对话数据集已生成数
     logs: []
   });
 
@@ -61,6 +64,21 @@ export default function DistillPage() {
       fetchProject();
       fetchTags();
       fetchDistillStats();
+    }
+  }, [projectId]);
+
+  // 监听多轮对话数据集刷新事件
+  useEffect(() => {
+    const handleRefreshStats = () => {
+      fetchDistillStats();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('refreshDistillStats', handleRefreshStats);
+
+      return () => {
+        window.removeEventListener('refreshDistillStats', handleRefreshStats);
+      };
     }
   }, [projectId]);
 
@@ -103,13 +121,25 @@ export default function DistillPage() {
       const questionsResponse = await axios.get(`/api/projects/${projectId}/questions/tree?isDistill=true`);
       const questionsCount = questionsResponse.data.length;
 
-      // TODO: 获取数据集数量，简化起见暂用问题数量代替
+      // 获取数据集数量
       const datasetsCount = questionsResponse.data.filter(q => q.answered).length;
+
+      // 获取多轮对话数据集数量
+      let multiTurnDatasetsCount = 0;
+      try {
+        const conversationsResponse = await axios.get(
+          `/api/projects/${projectId}/dataset-conversations?getAllIds=true`
+        );
+        multiTurnDatasetsCount = (conversationsResponse.data.allConversationIds || []).length;
+      } catch (error) {
+        console.log('获取多轮对话数据集统计失败，可能是API不存在:', error.message);
+      }
 
       setDistillStats({
         tagsCount,
         questionsCount,
-        datasetsCount
+        datasetsCount,
+        multiTurnDatasetsCount
       });
     } catch (error) {
       console.error('获取蒸馏统计信息失败:', error);
@@ -183,6 +213,9 @@ export default function DistillPage() {
       questionsBuilt: distillStats.questionsCount || 0,
       datasetsTotal: config.estimatedQuestions, // 初步设置数据集总数为问题数，后面会更新
       datasetsBuilt: distillStats.datasetsCount || 0, // 根据当前已生成的数据集数量初始化
+      multiTurnDatasetsTotal:
+        config.datasetType === 'multi-turn' || config.datasetType === 'both' ? config.estimatedQuestions : 0,
+      multiTurnDatasetsBuilt: distillStats.multiTurnDatasetsCount || 0,
       logs: [t('distill.autoDistillStarted', { time: new Date().toLocaleTimeString() })]
     });
 
@@ -201,6 +234,7 @@ export default function DistillPage() {
         levels: config.levels,
         tagsPerLevel: config.tagsPerLevel,
         questionsPerTag: config.questionsPerTag,
+        datasetType: config.datasetType, // 新增数据集类型参数
         model: selectedModel,
         language: i18n.language,
         concurrencyLimit: project?.taskConfig?.concurrencyLimit || 5, // 从项目配置中获取并发限制
@@ -266,6 +300,20 @@ export default function DistillPage() {
           newProgress.datasetsBuilt += progressUpdate.datasetsBuilt;
         } else {
           newProgress.datasetsBuilt = progressUpdate.datasetsBuilt;
+        }
+      }
+
+      // 更新多轮对话数据集总数
+      if (progressUpdate.multiTurnDatasetsTotal) {
+        newProgress.multiTurnDatasetsTotal = progressUpdate.multiTurnDatasetsTotal;
+      }
+
+      // 更新已生成多轮对话数据集数
+      if (progressUpdate.multiTurnDatasetsBuilt) {
+        if (progressUpdate.updateType === 'increment') {
+          newProgress.multiTurnDatasetsBuilt += progressUpdate.multiTurnDatasetsBuilt;
+        } else {
+          newProgress.multiTurnDatasetsBuilt = progressUpdate.multiTurnDatasetsBuilt;
         }
       }
 

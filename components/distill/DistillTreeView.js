@@ -4,7 +4,10 @@ import { useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHan
 import { useTranslation } from 'react-i18next';
 import { Box, Typography, List } from '@mui/material';
 import axios from 'axios';
+import { useAtomValue } from 'jotai';
+import { selectedModelInfoAtom } from '@/lib/store';
 import { useGenerateDataset } from '@/hooks/useGenerateDataset';
+import { toast } from 'sonner';
 
 // 导入子组件
 import TagTreeItem from './TagTreeItem';
@@ -25,6 +28,7 @@ const DistillTreeView = forwardRef(function DistillTreeView(
   ref
 ) {
   const { t } = useTranslation();
+  const selectedModel = useAtomValue(selectedModelInfoAtom);
   const [expandedTags, setExpandedTags] = useState({});
   const [tagQuestions, setTagQuestions] = useState({});
   const [loadingTags, setLoadingTags] = useState({});
@@ -34,6 +38,7 @@ const DistillTreeView = forwardRef(function DistillTreeView(
   const [allQuestions, setAllQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [processingQuestions, setProcessingQuestions] = useState({});
+  const [processingMultiTurnQuestions, setProcessingMultiTurnQuestions] = useState({});
   const [deleteQuestionConfirmOpen, setDeleteQuestionConfirmOpen] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -252,6 +257,78 @@ const DistillTreeView = forwardRef(function DistillTreeView(
     }));
   };
 
+  // 处理生成多轮对话数据集
+  const handleGenerateMultiTurnDataset = async (questionId, questionInfo, event) => {
+    event.stopPropagation();
+
+    try {
+      // 设置处理状态
+      setProcessingMultiTurnQuestions(prev => ({
+        ...prev,
+        [questionId]: true
+      }));
+
+      // 首先检查项目是否配置了多轮对话设置
+      const configResponse = await axios.get(`/api/projects/${projectId}/tasks`);
+      if (configResponse.status !== 200) {
+        throw new Error('获取项目配置失败');
+      }
+
+      const config = configResponse.data;
+      const multiTurnConfig = {
+        systemPrompt: config.multiTurnSystemPrompt,
+        scenario: config.multiTurnScenario,
+        rounds: config.multiTurnRounds,
+        roleA: config.multiTurnRoleA,
+        roleB: config.multiTurnRoleB
+      };
+
+      // 检查是否已配置必要的多轮对话设置
+      if (
+        !multiTurnConfig.scenario ||
+        !multiTurnConfig.roleA ||
+        !multiTurnConfig.roleB ||
+        !multiTurnConfig.rounds ||
+        multiTurnConfig.rounds < 1
+      ) {
+        throw new Error('请先在项目设置中配置多轮对话相关参数');
+      }
+
+      // 检查是否选择了模型
+      if (!selectedModel || Object.keys(selectedModel).length === 0) {
+        throw new Error('请先选择一个模型');
+      }
+
+      // 调用多轮对话生成API
+      const response = await axios.post(`/api/projects/${projectId}/dataset-conversations`, {
+        questionId,
+        ...multiTurnConfig,
+        model: selectedModel,
+        language: 'zh-CN'
+      });
+
+      if (response.status === 200) {
+        // 成功后刷新问题统计
+        fetchQuestionsStats();
+        toast.success(t('datasets.multiTurnGenerateSuccess', { defaultValue: '多轮对话数据集生成成功！' }));
+
+        // 通知父组件刷新统计信息
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('refreshDistillStats'));
+        }
+      }
+    } catch (error) {
+      console.error('生成多轮对话数据集失败:', error);
+      toast.error(error.message || t('datasets.multiTurnGenerateError', { defaultValue: '生成多轮对话数据集失败' }));
+    } finally {
+      // 重置处理状态
+      setProcessingMultiTurnQuestions(prev => ({
+        ...prev,
+        [questionId]: false
+      }));
+    }
+  };
+
   // 获取标签路径
   const getTagPath = useCallback(
     tag => {
@@ -328,8 +405,10 @@ const DistillTreeView = forwardRef(function DistillTreeView(
             questions={tagQuestions[tag.id] || []}
             loadingQuestions={loadingQuestions[tag.id]}
             processingQuestions={processingQuestions}
+            processingMultiTurnQuestions={processingMultiTurnQuestions}
             onDeleteQuestion={openDeleteQuestionConfirm}
             onGenerateDataset={handleGenerateDataset}
+            onGenerateMultiTurnDataset={handleGenerateMultiTurnDataset}
             allQuestions={allQuestions}
             tagQuestions={tagQuestions}
           >
