@@ -92,7 +92,6 @@ export default function QuestionListView({
       }
 
       const config = await configResponse.json();
-      console.log('999999999:', config);
       const multiTurnConfig = {
         systemPrompt: config.multiTurnSystemPrompt,
         scenario: config.multiTurnScenario,
@@ -142,9 +141,6 @@ export default function QuestionListView({
 
       const result = await response.json();
       toast.success(t('questions.multiTurnGenerated', '多轮对话数据集生成成功！'));
-
-      // 可选：跳转到多轮对话数据集详情页
-      // router.push(`/projects/${projectId}/multi-turn/${result.data.id}`);
     } catch (error) {
       console.error('生成多轮对话数据集失败:', error);
       toast.error(error.message || '生成多轮对话数据集失败');
