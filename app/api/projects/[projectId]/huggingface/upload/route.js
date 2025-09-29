@@ -164,47 +164,47 @@ function formatDataset(questions, formatType, systemPrompt, includeCOT, customFi
       return { messages };
     });
   } else if (formatType === 'multilingualthinking') {
-  return questions.map(q => {
-    const messages = [];
+    return questions.map(q => {
+      const messages = [];
 
-    // Main message block
-    const mainMsg = {
-      reasoning_language: reasoningLanguage ? reasoningLanguage : 'English',
-      user: q.question,
-      analysis: includeCOT && q.cot ? `${q.cot}` : null,
-      final: q.answer
-    };
-    if (systemPrompt) {
-      mainMsg.developer = systemPrompt;
-    }
-    messages.push(mainMsg);
+      // Main message block
+      const mainMsg = {
+        reasoning_language: reasoningLanguage ? reasoningLanguage : 'English',
+        user: q.question,
+        analysis: includeCOT && q.cot ? `${q.cot}` : null,
+        final: q.answer
+      };
+      if (systemPrompt) {
+        mainMsg.developer = systemPrompt;
+      }
+      messages.push(mainMsg);
 
-    // Optional system prompt
-    if (systemPrompt) {
+      // Optional system prompt
+      if (systemPrompt) {
+        messages.push({
+          role: 'system',
+          content: systemPrompt,
+          thinking: null
+        });
+      }
+
+      // User message
       messages.push({
-        role: 'system',
-        content: systemPrompt,
+        role: 'user',
+        content: q.question,
         thinking: null
       });
-    }
 
-    // User message
-    messages.push({
-      role: 'user',
-      content: q.question,
-      thinking: null
+      // Assistant message
+      messages.push({
+        role: 'assistant',
+        content: q.answer,
+        thinking: includeCOT && q.cot ? `${q.cot}` : null
+      });
+
+      return { messages };
     });
-
-    // Assistant message
-    messages.push({
-      role: 'assistant',
-      content: q.answer,
-      thinking: includeCOT && q.cot ? `${q.cot}` : null
-    });
-
-    return { messages };
-  });
-} else if (formatType === 'custom' && customFields) {
+  } else if (formatType === 'custom' && customFields) {
     return questions.map(q => {
       const item = {
         [customFields.questionField]: q.question,

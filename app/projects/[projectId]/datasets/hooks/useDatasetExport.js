@@ -154,18 +154,18 @@ const useDatasetExport = projectId => {
         final: answer,
         messages: [
           {
-            content: exportOptions.systemPrompt|| '',          
+            content: exportOptions.systemPrompt || '',
             role: 'system',
-            thinking: null      
-          },       
+            thinking: null
+          },
           {
-            content: question,          
+            content: question,
             role: 'user',
             thinking: null
           },
           {
             content: answer,
-            role: 'assistant',          
+            role: 'assistant',
             thinking: exportOptions.includeCOT && cot ? cot : null
           }
         ]
@@ -250,7 +250,7 @@ const useDatasetExport = projectId => {
       alpaca: 'alpaca',
       'multilingual-thinking': 'multilingual-thinking',
       sharegpt: 'sharegpt',
-      custom: 'custom',
+      custom: 'custom'
     };
 
     const url = URL.createObjectURL(blob);

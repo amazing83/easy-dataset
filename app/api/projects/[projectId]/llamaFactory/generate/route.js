@@ -62,7 +62,7 @@ export async function POST(request, { params }) {
           assistant_tag: 'assistant',
           system_tag: 'system'
         }
-      }      
+      }
     };
 
     // 生成数据文件
@@ -93,9 +93,9 @@ export async function POST(request, { params }) {
     });
     const multilingualThinkingData = datasets.map(({ question, answer, cot }) => ({
       reasoning_language: reasoningLanguage ? reasoningLanguage : 'English',
-      developer: systemPrompt ? systemPrompt : '',                     // system prompt (may be empty)
+      developer: systemPrompt ? systemPrompt : '', // system prompt (may be empty)
       user: question,
-      analysis: includeCOT && cot ? cot : null,    // null if no COT
+      analysis: includeCOT && cot ? cot : null, // null if no COT
       final: answer,
       messages: [
         {
@@ -116,24 +116,22 @@ export async function POST(request, { params }) {
       ]
     }));
 
-    const multilingualThinkingLines = multilingualThinkingData
-      .map(item => JSON.stringify(item, null, 2))
-      .join('\n');
+    const multilingualThinkingLines = multilingualThinkingData.map(item => JSON.stringify(item, null, 2)).join('\n');
 
-    await fs.promises.writeFile(multilingualThinkingPath, multilingualThinkingLines, 'utf8');    
+    await fs.promises.writeFile(multilingualThinkingPath, multilingualThinkingLines, 'utf8');
 
     // 写入文件
     await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2));
     await fs.promises.writeFile(alpacaPath, JSON.stringify(alpacaData, null, 2));
     await fs.promises.writeFile(sharegptPath, JSON.stringify(sharegptData, null, 2));
- 
+
     return NextResponse.json({
       success: true,
       configPath,
       files: [
         { path: alpacaPath, format: 'alpaca' },
         { path: sharegptPath, format: 'sharegpt' },
-        { path: multilingualThinkingPath, format: 'multilingual-thinking' },
+        { path: multilingualThinkingPath, format: 'multilingual-thinking' }
       ]
     });
   } catch (error) {
@@ -141,5 +139,3 @@ export async function POST(request, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
-

@@ -472,7 +472,7 @@
     "noTokenWarning": "未找到 HuggingFace 令牌。请在项目设置中配置令牌。",
     "goToSettings": "前往设置",
     "tokenHelp": "您可以从HuggingFace设置页面获取令牌",
-    "multilingualThinkingFormat": "Multilingual‑Thinking"    
+    "multilingualThinkingFormat": "Multilingual‑Thinking"
   },
   "datasets": {
     "loadingDataset": "正在加载数据集详情...",
