@@ -1,7 +1,12 @@
 'use client';
 
 import { Box, Paper, Button, IconButton, InputBase, CircularProgress } from '@mui/material';
-import { Search as SearchIcon, FilterList as FilterIcon, Download as DownloadIcon } from '@mui/icons-material';
+import {
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  Download as DownloadIcon,
+  Delete as DeleteIcon
+} from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -12,6 +17,9 @@ import { useTranslation } from 'react-i18next';
  * @param {function} onFilterClick - 筛选按钮点击回调
  * @param {function} onExportClick - 导出按钮点击回调
  * @param {boolean} exportLoading - 导出加载状态
+ * @param {number} selectedCount - 选中的项目数量
+ * @param {function} onBatchDelete - 批量删除回调
+ * @param {boolean} batchDeleteLoading - 批量删除加载状态
  */
 const SearchBar = ({
   searchKeyword,
@@ -19,7 +27,10 @@ const SearchBar = ({
   onSearch,
   onFilterClick,
   onExportClick,
-  exportLoading = false
+  exportLoading = false,
+  selectedCount = 0,
+  onBatchDelete,
+  batchDeleteLoading = false
 }) => {
   const { t } = useTranslation();
 
@@ -52,6 +63,18 @@ const SearchBar = ({
         </Button>
       </Box>
       <Box sx={{ display: 'flex', gap: 2 }}>
+        {selectedCount > 0 && (
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={batchDeleteLoading ? <CircularProgress size={16} /> : <DeleteIcon />}
+            onClick={onBatchDelete}
+            disabled={batchDeleteLoading}
+            sx={{ borderRadius: 2 }}
+          >
+            {batchDeleteLoading ? t('datasets.deleting') : `${t('datasets.batchDelete')} (${selectedCount})`}
+          </Button>
+        )}
         <Button
           variant="outlined"
           startIcon={exportLoading ? <CircularProgress size={16} /> : <DownloadIcon />}

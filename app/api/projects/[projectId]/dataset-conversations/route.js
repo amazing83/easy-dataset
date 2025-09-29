@@ -18,8 +18,7 @@ export async function GET(request, { params }) {
     const { projectId } = params;
     const { searchParams } = new URL(request.url);
 
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '20');
+    const getAllIds = searchParams.get('getAllIds') === 'true'; // 新增：获取所有对话ID的标志
 
     // 筛选条件
     const filters = {
@@ -36,6 +35,17 @@ export async function GET(request, { params }) {
     Object.keys(filters).forEach(key => {
       if (!filters[key]) delete filters[key];
     });
+
+    // 如果请求获取所有ID
+    if (getAllIds) {
+      const allConversations = await getAllDatasetConversations(projectId, filters);
+      const allConversationIds = allConversations.map(conversation => String(conversation.id)) || [];
+      return NextResponse.json({ allConversationIds });
+    }
+
+    // 正常分页查询
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '20');
 
     const result = await getDatasetConversationsByPagination(projectId, page, pageSize, filters);
 

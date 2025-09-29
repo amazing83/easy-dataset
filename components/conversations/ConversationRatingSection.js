@@ -196,15 +196,6 @@ export default function ConversationRatingSection({ conversation, projectId, onU
           </Box>
         </>
       )}
-
-      {/* 创建时间 */}
-      <Divider sx={{ my: 2 }} />
-      <Box>
-        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          {t('datasets.createTime')}
-        </Typography>
-        <Typography variant="body2">{new Date(conversation.createAt).toLocaleString()}</Typography>
-      </Box>
     </Paper>
   );
 }

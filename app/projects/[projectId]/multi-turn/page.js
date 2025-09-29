@@ -15,7 +15,7 @@ export default function MultiTurnDatasetPage({ params }) {
   const theme = useTheme();
   const { projectId } = params;
 
-  // 使用自定义Hook管理数据
+  // 使用自定义Hook管理状态和逻辑
   const {
     conversations,
     loading,
@@ -26,9 +26,13 @@ export default function MultiTurnDatasetPage({ params }) {
     filterDialogOpen,
     exportLoading,
     filters,
+    selectedIds,
+    isAllSelected,
+    batchDeleteLoading,
     setSearchKeyword,
     setFilterDialogOpen,
     setFilters,
+    fetchConversations,
     handleExport,
     handleDelete,
     handleView,
@@ -36,7 +40,10 @@ export default function MultiTurnDatasetPage({ params }) {
     resetFilters,
     handleSearch,
     handlePageChange,
-    handleRowsPerPageChange
+    handleRowsPerPageChange,
+    handleBatchDelete,
+    handleSelectionChange,
+    handleSelectAll
   } = useMultiTurnData(projectId);
 
   return (
@@ -64,19 +71,26 @@ export default function MultiTurnDatasetPage({ params }) {
           onFilterClick={() => setFilterDialogOpen(true)}
           onExportClick={handleExport}
           exportLoading={exportLoading}
+          selectedCount={isAllSelected ? total : selectedIds.length}
+          onBatchDelete={handleBatchDelete}
+          batchDeleteLoading={batchDeleteLoading}
         />
       </Card>
 
       <ConversationTable
         conversations={conversations}
         loading={loading}
-        total={total}
         page={page}
         rowsPerPage={rowsPerPage}
-        onPageChange={handlePageChange}
-        onRowsPerPageChange={handleRowsPerPageChange}
+        total={total}
         onView={handleView}
         onDelete={handleDelete}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+        selectedIds={selectedIds}
+        onSelectionChange={handleSelectionChange}
+        isAllSelected={isAllSelected}
+        onSelectAll={handleSelectAll}
       />
 
       <FilterDialog

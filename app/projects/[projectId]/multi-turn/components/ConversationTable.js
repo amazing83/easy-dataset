@@ -13,7 +13,8 @@ import {
   Tooltip,
   Typography,
   Chip,
-  CircularProgress
+  CircularProgress,
+  Checkbox
 } from '@mui/material';
 import { Delete as DeleteIcon, Visibility as ViewIcon } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
@@ -30,6 +31,10 @@ import RatingChip from './RatingChip';
  * @param {function} onRowsPerPageChange - 每页行数变化回调
  * @param {function} onView - 查看回调
  * @param {function} onDelete - 删除回调
+ * @param {Array} selectedIds - 选中的对话ID数组
+ * @param {function} onSelectionChange - 选择变化回调
+ * @param {boolean} isAllSelected - 是否全选
+ * @param {function} onSelectAll - 全选回调
  */
 const ConversationTable = ({
   conversations,
@@ -40,15 +45,47 @@ const ConversationTable = ({
   onPageChange,
   onRowsPerPageChange,
   onView,
-  onDelete
+  onDelete,
+  selectedIds = [],
+  onSelectionChange,
+  isAllSelected = false,
+  onSelectAll
 }) => {
   const { t } = useTranslation();
+
+  // 处理单个选择
+  const handleSelectOne = conversationId => {
+    if (selectedIds.includes(conversationId)) {
+      onSelectionChange(selectedIds.filter(id => id !== conversationId));
+    } else {
+      onSelectionChange([...selectedIds, conversationId]);
+    }
+  };
+
+  // 处理全选
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      onSelectionChange([]);
+      onSelectAll(false);
+    } else {
+      // 选择当前页面的所有对话
+      const currentPageIds = conversations.map(conv => conv.id);
+      onSelectionChange(currentPageIds);
+      onSelectAll(true);
+    }
+  };
+
+  // 计算是否部分选中
+  const isIndeterminate = selectedIds.length > 0 && !isAllSelected;
 
   return (
     <TableContainer component={Paper} elevation={0}>
       <Table>
         <TableHead>
           <TableRow sx={{ bgcolor: 'action.hover' }}>
+            <TableCell padding="checkbox">
+              <Checkbox indeterminate={isIndeterminate} checked={isAllSelected} onChange={handleSelectAll} />
+            </TableCell>
             <TableCell>{t('datasets.firstQuestion')}</TableCell>
             <TableCell>{t('datasets.conversationScenario')}</TableCell>
             <TableCell>{t('datasets.conversationRounds')}</TableCell>
@@ -61,13 +98,13 @@ const ConversationTable = ({
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+              <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
                 <CircularProgress size={40} />
               </TableCell>
             </TableRow>
           ) : conversations.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+              <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
                 <Typography variant="body1" color="text.secondary">
                   {t('datasets.noConversations')}
                 </Typography>
@@ -76,6 +113,12 @@ const ConversationTable = ({
           ) : (
             conversations.map(conversation => (
               <TableRow key={conversation.id} hover>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={selectedIds.includes(conversation.id)}
+                    onChange={() => handleSelectOne(conversation.id)}
+                  />
+                </TableCell>
                 <TableCell>
                   <Typography variant="body2" sx={{ maxWidth: 300 }}>
                     {conversation.question}
