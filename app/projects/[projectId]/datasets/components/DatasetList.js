@@ -18,7 +18,8 @@ import {
   Checkbox,
   TablePagination,
   TextField,
-  Card
+  Card,
+  CircularProgress
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -303,7 +304,11 @@ const DatasetList = ({
                             '&:hover': { backgroundColor: alpha(theme.palette.secondary.main, 0.1) }
                           }}
                         >
-                          <AssessmentIcon fontSize="small" />
+                          {evaluatingIds.includes(dataset.id) ? (
+                            <CircularProgress size={20} sx={{ color: theme.palette.secondary.main }} />
+                          ) : (
+                            <AssessmentIcon fontSize="small" />
+                          )}
                         </IconButton>
                       </Tooltip>
                       <Tooltip title={t('common.delete')}>
