@@ -189,16 +189,6 @@ export default function MultiTurnDatasetPage({ params }) {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
-          {t('datasets.multiTurn')}
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          {t('settings.multiTurnDescription')}
-        </Typography>
-      </Box>
-
-      {/* 操作栏 */}
       <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: 'background.paper' }}>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField

@@ -447,7 +447,7 @@ export default function QuestionsPage({ params }) {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 8 }}>
       {/* 处理中的进度显示 - 全局蒙版样式 */}
       {processing && (
         <Box

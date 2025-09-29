@@ -556,7 +556,7 @@ export default function DatasetsPage({ params }) {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
       <Card
         elevation={0}
         sx={{
