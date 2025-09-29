@@ -154,10 +154,28 @@ export default function useConversationDetails(projectId, conversationId) {
     setEditData({ ...editData, messages: updatedMessages });
   };
 
-  // 翻页导航 (TODO: 实现翻页逻辑)
-  const handleNavigate = direction => {
-    console.log('翻页:', direction);
-    // TODO: 实现前一个/下一个对话的导航
+  // 翻页导航
+  const handleNavigate = async direction => {
+    try {
+      const response = await fetch(
+        `/api/projects/${projectId}/dataset-conversations/${conversationId}?operateType=${direction}`
+      );
+
+      if (!response.ok) {
+        throw new Error('获取导航数据失败');
+      }
+
+      const data = await response.json();
+
+      if (data) {
+        router.push(`/projects/${projectId}/multi-turn/${data.id}`);
+      } else {
+        toast.warning(`已经是${direction === 'next' ? '最后' : '第'}一条对话了`);
+      }
+    } catch (error) {
+      console.error('导航失败:', error);
+      toast.error(error.message || '导航失败');
+    }
   };
 
   // 初始化

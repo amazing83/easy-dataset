@@ -136,18 +136,6 @@ export default function ConversationRatingSection({ conversation, projectId, onU
 
   return (
     <Paper sx={{ p: 3, mb: 3 }}>
-      {/* 基本信息 */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          {t('datasets.firstQuestion')}
-        </Typography>
-        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-          {conversation.question}
-        </Typography>
-      </Box>
-
-      <Divider sx={{ my: 2 }} />
-
       {/* 评分区域 */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
@@ -185,14 +173,14 @@ export default function ConversationRatingSection({ conversation, projectId, onU
       <Divider sx={{ my: 2 }} />
 
       {/* 确认状态 */}
-      <Box sx={{ mb: 3 }}>
+      {/* <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
           {t('datasets.confirmationStatus')}
         </Typography>
         <Typography variant="body2">
           {conversation.confirmed ? t('datasets.confirmed') : t('datasets.unconfirmed')}
         </Typography>
-      </Box>
+      </Box> */}
 
       {/* AI评估 */}
       {conversation.aiEvaluation && (

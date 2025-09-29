@@ -6,7 +6,8 @@ import { NextResponse } from 'next/server';
 import {
   getDatasetConversationById,
   updateDatasetConversation,
-  deleteDatasetConversation
+  deleteDatasetConversation,
+  getConversationNavigationItems
 } from '@/lib/db/dataset-conversations';
 
 /**
@@ -15,6 +16,14 @@ import {
 export async function GET(request, { params }) {
   try {
     const { projectId, conversationId } = params;
+    const { searchParams } = new URL(request.url);
+    const operateType = searchParams.get('operateType');
+
+    // 如果是导航操作，返回导航项
+    if (operateType !== null) {
+      const data = await getConversationNavigationItems(projectId, conversationId, operateType);
+      return NextResponse.json(data);
+    }
 
     const conversation = await getDatasetConversationById(conversationId);
 
