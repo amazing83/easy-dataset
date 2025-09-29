@@ -15,6 +15,7 @@ import {
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import ChatIcon from '@mui/icons-material/Chat';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -24,9 +25,19 @@ import { useTranslation } from 'react-i18next';
  * @param {number} props.level - 缩进级别
  * @param {Function} props.onDelete - 删除问题的回调
  * @param {Function} props.onGenerateDataset - 生成数据集的回调
+ * @param {Function} props.onGenerateMultiTurnDataset - 生成多轮对话数据集的回调
  * @param {boolean} props.processing - 是否正在处理
+ * @param {boolean} props.processingMultiTurn - 是否正在生成多轮对话
  */
-export default function QuestionListItem({ question, level, onDelete, onGenerateDataset, processing = false }) {
+export default function QuestionListItem({
+  question,
+  level,
+  onDelete,
+  onGenerateDataset,
+  onGenerateMultiTurnDataset,
+  processing = false,
+  processingMultiTurn = false
+}) {
   const { t } = useTranslation();
 
   return (
@@ -45,12 +56,32 @@ export default function QuestionListItem({ question, level, onDelete, onGenerate
       secondaryAction={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <Tooltip title={t('datasets.generateDataset')}>
-            <IconButton size="small" color="primary" onClick={e => onGenerateDataset(e)} disabled={processing}>
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={e => onGenerateDataset(e)}
+              disabled={processing || processingMultiTurn}
+            >
               {processing ? <CircularProgress size={16} /> : <AutoFixHighIcon fontSize="small" />}
             </IconButton>
           </Tooltip>
+          <Tooltip title={t('questions.generateMultiTurnDataset', { defaultValue: '生成多轮对话数据集' })}>
+            <IconButton
+              size="small"
+              color="secondary"
+              onClick={e => onGenerateMultiTurnDataset && onGenerateMultiTurnDataset(e)}
+              disabled={processing || processingMultiTurn || !onGenerateMultiTurnDataset}
+            >
+              {processingMultiTurn ? <CircularProgress size={16} /> : <ChatIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
           <Tooltip title={t('common.delete')}>
-            <IconButton size="small" color="error" onClick={e => onDelete(e)} disabled={processing}>
+            <IconButton
+              size="small"
+              color="error"
+              onClick={e => onDelete(e)}
+              disabled={processing || processingMultiTurn}
+            >
               <DeleteIcon fontSize="small" />
             </IconButton>
           </Tooltip>

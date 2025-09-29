@@ -1,139 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Container,
-  Box,
-  Typography,
-  Button,
-  IconButton,
-  Paper,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Card,
-  useTheme,
-  alpha,
-  InputAdornment,
-  InputBase,
-  LinearProgress,
-  Select,
-  MenuItem,
-  Slider,
-  TextField,
-  Tooltip
-} from '@mui/material';
+import { Container, Box, Typography, Button, CircularProgress, Card, useTheme, alpha } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SearchIcon from '@mui/icons-material/Search';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import { useRouter } from 'next/navigation';
 import ExportDatasetDialog from '@/components/ExportDatasetDialog';
 import ExportProgressDialog from '@/components/ExportProgressDialog';
 import ImportDatasetDialog from '@/components/datasets/ImportDatasetDialog';
 import { useTranslation } from 'react-i18next';
 import DatasetList from './components/DatasetList';
+import SearchBar from './components/SearchBar';
+import ActionBar from './components/ActionBar';
+import FilterDialog from './components/FilterDialog';
+import DeleteConfirmDialog from './components/DeleteConfirmDialog';
 import useDatasetExport from './hooks/useDatasetExport';
+import useDatasetEvaluation from './hooks/useDatasetEvaluation';
 import { processInParallel } from '@/lib/util/async';
 import axios from 'axios';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'sonner';
-
-// 删除确认对话框
-const DeleteConfirmDialog = ({ open, datasets, onClose, onConfirm, batch, progress, deleting }) => {
-  const theme = useTheme();
-  const { t } = useTranslation();
-  const dataset = datasets?.[0];
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      PaperProps={{
-        elevation: 3,
-        sx: { borderRadius: 2 }
-      }}
-    >
-      <DialogTitle sx={{ pb: 1 }}>
-        <Typography variant="h6" fontWeight="bold">
-          {t('common.confirmDelete')}
-        </Typography>
-      </DialogTitle>
-      <DialogContent sx={{ pb: 2, pt: 1 }}>
-        <Typography variant="body1" sx={{ mb: 2 }}>
-          {batch
-            ? t('datasets.batchconfirmDeleteMessage', {
-                count: datasets.length
-              })
-            : t('common.confirmDeleteDataSet')}
-        </Typography>
-        {batch ? (
-          ''
-        ) : (
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2,
-              backgroundColor: alpha(theme.palette.warning.light, 0.1),
-              borderColor: theme.palette.warning.light
-            }}
-          >
-            <Typography variant="subtitle2" color="text.secondary" fontWeight="bold">
-              {t('datasets.question')}：
-            </Typography>
-            <Typography variant="body2">{dataset?.question}</Typography>
-          </Paper>
-        )}
-        {deleting && progress ? (
-          <Box sx={{ mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body1" sx={{ mr: 1 }}>
-                {progress.percentage}%
-              </Typography>
-              <Box sx={{ width: '100%' }}>
-                <LinearProgress
-                  variant="determinate"
-                  value={progress.percentage}
-                  sx={{
-                    height: 8,
-                    borderRadius: 4,
-                    '& .MuiLinearProgress-bar': {
-                      transitionDuration: '0.1s'
-                    }
-                  }}
-                  color="primary"
-                />
-              </Box>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-              <Typography variant="body2">
-                {t('datasets.batchDeleteProgress', {
-                  completed: progress.completed,
-                  total: progress.total
-                })}
-              </Typography>
-              <Typography variant="body2" color="success.main" sx={{ fontWeight: 'medium' }}>
-                {t('datasets.batchDeleteCount', { count: progress.datasetCount })}
-              </Typography>
-            </Box>
-          </Box>
-        ) : (
-          ''
-        )}
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2 }}>
-          {t('common.cancel')}
-        </Button>
-        <Button onClick={onConfirm} color="error" variant="contained" sx={{ borderRadius: 2 }}>
-          {t('common.delete')}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
 
 // 主页面组件
 export default function DatasetsPage({ params }) {
@@ -388,6 +273,12 @@ export default function DatasetsPage({ params }) {
   // 使用自定义 Hook 处理数据集导出逻辑
   const { exportDatasets, exportDatasetsStreaming } = useDatasetExport(projectId);
 
+  // 使用自定义 Hook 处理数据集评估逻辑
+  const { evaluatingIds, batchEvaluating, handleEvaluateDataset, handleBatchEvaluate } = useDatasetEvaluation(
+    projectId,
+    getDatasetsList
+  );
+
   // 处理导出数据集 - 智能选择导出方式
   const handleExportDatasets = async exportOptions => {
     try {
@@ -483,7 +374,7 @@ export default function DatasetsPage({ params }) {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 6 }}>
       <Card
         elevation={0}
         sx={{
@@ -502,89 +393,25 @@ export default function DatasetsPage({ params }) {
             gap: 2
           }}
         >
-          <Box>
-            <Typography variant="h4" fontWeight="bold" sx={{ mb: 0.5 }}>
-              {t('datasets.management')}
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {t('datasets.stats', {
-                total: datasets.total,
-                confirmed: datasets.confirmedCount,
-                percentage: datasets.total > 0 ? ((datasets.confirmedCount / datasets.total) * 100).toFixed(2) : 0
-              })}
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Paper
-              component="form"
-              sx={{
-                p: '2px 4px',
-                display: 'flex',
-                alignItems: 'center',
-                width: 400,
-                borderRadius: 2
-              }}
-            >
-              <IconButton sx={{ p: '10px' }} aria-label="search">
-                <SearchIcon />
-              </IconButton>
-              <InputBase
-                sx={{ ml: 1, flex: 1 }}
-                placeholder={t('datasets.searchPlaceholder')}
-                value={searchQuery}
-                onChange={e => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                endAdornment={
-                  <Select
-                    value={searchField}
-                    onChange={e => {
-                      setSearchField(e.target.value);
-                      setPage(1);
-                    }}
-                    variant="standard"
-                    sx={{
-                      minWidth: 90,
-                      '& .MuiInput-underline:before': { borderBottom: 'none' },
-                      '& .MuiInput-underline:after': { borderBottom: 'none' },
-                      '& .MuiInput-underline:hover:not(.Mui-disabled):before': { borderBottom: 'none' }
-                    }}
-                    disableUnderline
-                  >
-                    <MenuItem value="question">{t('datasets.fieldQuestion')}</MenuItem>
-                    <MenuItem value="answer">{t('datasets.fieldAnswer')}</MenuItem>
-                    <MenuItem value="cot">{t('datasets.fieldCOT')}</MenuItem>
-                    <MenuItem value="questionLabel">{t('datasets.fieldLabel')}</MenuItem>
-                  </Select>
-                }
-              />
-            </Paper>
-            <Button
-              variant="outlined"
-              onClick={() => setFilterDialogOpen(true)}
-              startIcon={<FilterListIcon />}
-              sx={{ borderRadius: 2 }}
-            >
-              {t('datasets.moreFilters')}
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<FileUploadIcon />}
-              sx={{ borderRadius: 2 }}
-              onClick={handleOpenImportDialog}
-            >
-              {t('import.title', '导入')}
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<FileDownloadIcon />}
-              sx={{ borderRadius: 2 }}
-              onClick={handleOpenExportDialog}
-            >
-              {t('export.title')}
-            </Button>
-          </Box>
+          <SearchBar
+            searchQuery={searchQuery}
+            searchField={searchField}
+            onSearchQueryChange={value => {
+              setSearchQuery(value);
+              setPage(1);
+            }}
+            onSearchFieldChange={value => {
+              setSearchField(value);
+              setPage(1);
+            }}
+            onMoreFiltersClick={() => setFilterDialogOpen(true)}
+          />
+          <ActionBar
+            batchEvaluating={batchEvaluating}
+            onBatchEvaluate={handleBatchEvaluate}
+            onImport={handleOpenImportDialog}
+            onExport={handleOpenExportDialog}
+          />
         </Box>
       </Card>
       {selectedIds.length ? (
@@ -621,6 +448,7 @@ export default function DatasetsPage({ params }) {
         datasets={datasets.data}
         onViewDetails={handleViewDetails}
         onDelete={handleOpenDeleteDialog}
+        onEvaluate={handleEvaluateDataset}
         page={page}
         rowsPerPage={rowsPerPage}
         onPageChange={handlePageChange}
@@ -629,6 +457,7 @@ export default function DatasetsPage({ params }) {
         selectedIds={selectedIds}
         onSelectAll={handleSelectAll}
         onSelectItem={handleSelectItem}
+        evaluatingIds={evaluatingIds}
       />
 
       <DeleteConfirmDialog
@@ -641,152 +470,37 @@ export default function DatasetsPage({ params }) {
         deleting={deleteDialog.deleting}
       />
 
-      {/* 更多筛选对话框 */}
-      <Dialog open={filterDialogOpen} onClose={() => setFilterDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>{t('datasets.filtersTitle')}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ mb: 3, mt: 1 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              {t('datasets.filterConfirmationStatus')}
-            </Typography>
-            <Select
-              value={filterConfirmed}
-              onChange={e => setFilterConfirmed(e.target.value)}
-              fullWidth
-              size="small"
-              sx={{ mt: 1 }}
-            >
-              <MenuItem value="all">{t('datasets.filterAll')}</MenuItem>
-              <MenuItem value="confirmed">{t('datasets.filterConfirmed')}</MenuItem>
-              <MenuItem value="unconfirmed">{t('datasets.filterUnconfirmed')}</MenuItem>
-            </Select>
-          </Box>
-
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              {t('datasets.filterCotStatus')}
-            </Typography>
-            <Select
-              value={filterHasCot}
-              onChange={e => setFilterHasCot(e.target.value)}
-              fullWidth
-              size="small"
-              sx={{ mt: 1 }}
-            >
-              <MenuItem value="all">{t('datasets.filterAll')}</MenuItem>
-              <MenuItem value="yes">{t('datasets.filterHasCot')}</MenuItem>
-              <MenuItem value="no">{t('datasets.filterNoCot')}</MenuItem>
-            </Select>
-          </Box>
-
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              {t('datasets.filterDistill')}
-            </Typography>
-            <Select
-              value={filterIsDistill}
-              onChange={e => setFilterIsDistill(e.target.value)}
-              fullWidth
-              size="small"
-              sx={{ mt: 1 }}
-            >
-              <MenuItem value="all">{t('datasets.filterAll')}</MenuItem>
-              <MenuItem value="yes">{t('datasets.filterDistillYes')}</MenuItem>
-              <MenuItem value="no">{t('datasets.filterDistillNo')}</MenuItem>
-            </Select>
-          </Box>
-
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              {t('datasets.filterScoreRange')}
-            </Typography>
-            <Box sx={{ px: 1, mt: 2 }}>
-              <Slider
-                value={filterScoreRange}
-                onChange={(event, newValue) => setFilterScoreRange(newValue)}
-                valueLabelDisplay="auto"
-                min={0}
-                max={5}
-                marks={[
-                  { value: 0, label: '0' },
-                  { value: 2.5, label: '2.5' },
-                  { value: 5, label: '5' }
-                ]}
-                sx={{ mt: 1 }}
-              />
-              <Typography variant="caption" color="text.secondary">
-                {filterScoreRange[0]} - {filterScoreRange[1]} 分
-              </Typography>
-            </Box>
-          </Box>
-
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              {t('datasets.filterCustomTag')}
-            </Typography>
-            <Select
-              value={filterCustomTag}
-              onChange={e => setFilterCustomTag(e.target.value)}
-              fullWidth
-              size="small"
-              sx={{ mt: 1 }}
-            >
-              <MenuItem value="">{t('datasets.filterAll')}</MenuItem>
-              {availableTags.map(tag => (
-                <MenuItem key={tag} value={tag}>
-                  {tag}
-                </MenuItem>
-              ))}
-            </Select>
-          </Box>
-
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              {t('datasets.filterNoteKeyword')}
-            </Typography>
-            <TextField
-              value={filterNoteKeyword}
-              onChange={e => setFilterNoteKeyword(e.target.value)}
-              placeholder={t('datasets.filterNoteKeywordPlaceholder')}
-              fullWidth
-              size="small"
-              sx={{ mt: 1 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                )
-              }}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setFilterConfirmed('all');
-              setFilterHasCot('all');
-              setFilterIsDistill('all');
-              setFilterScoreRange([0, 5]);
-              setFilterCustomTag('');
-              setFilterNoteKeyword('');
-              getDatasetsList();
-            }}
-          >
-            {t('datasets.resetFilters')}
-          </Button>
-          <Button
-            onClick={() => {
-              setFilterDialogOpen(false);
-              setPage(1); // 重置到第一页
-              getDatasetsList();
-            }}
-            variant="contained"
-          >
-            {t('datasets.applyFilters')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <FilterDialog
+        open={filterDialogOpen}
+        onClose={() => setFilterDialogOpen(false)}
+        filterConfirmed={filterConfirmed}
+        filterHasCot={filterHasCot}
+        filterIsDistill={filterIsDistill}
+        filterScoreRange={filterScoreRange}
+        filterCustomTag={filterCustomTag}
+        filterNoteKeyword={filterNoteKeyword}
+        availableTags={availableTags}
+        onFilterConfirmedChange={setFilterConfirmed}
+        onFilterHasCotChange={setFilterHasCot}
+        onFilterIsDistillChange={setFilterIsDistill}
+        onFilterScoreRangeChange={setFilterScoreRange}
+        onFilterCustomTagChange={setFilterCustomTag}
+        onFilterNoteKeywordChange={setFilterNoteKeyword}
+        onResetFilters={() => {
+          setFilterConfirmed('all');
+          setFilterHasCot('all');
+          setFilterIsDistill('all');
+          setFilterScoreRange([0, 5]);
+          setFilterCustomTag('');
+          setFilterNoteKeyword('');
+          getDatasetsList();
+        }}
+        onApplyFilters={() => {
+          setFilterDialogOpen(false);
+          setPage(1);
+          getDatasetsList();
+        }}
+      />
 
       <ExportDatasetDialog
         open={exportDialog.open}

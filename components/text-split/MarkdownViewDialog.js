@@ -12,18 +12,16 @@ import {
   Typography,
   Divider,
   Chip,
-  IconButton,
   Switch,
   FormControlLabel,
-  Tooltip,
   Alert,
   DialogContentText
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
+import 'github-markdown-css/github-markdown-light.css';
 
 export default function MarkdownViewDialog({ open, text, onClose, projectId, onSaveSuccess }) {
   const { t } = useTranslation();
@@ -393,7 +391,9 @@ export default function MarkdownViewDialog({ open, text, onClose, projectId, onS
               </Box>
             ) : (
               <Box>
-                <ReactMarkdown>{text.content}</ReactMarkdown>
+                <div className="markdown-body">
+                  <ReactMarkdown>{text.content}</ReactMarkdown>
+                </div>
               </Box>
             )}
           </Box>

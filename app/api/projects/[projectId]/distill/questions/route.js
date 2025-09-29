@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { distillQuestionsPrompt } from '@/lib/llm/prompts/distillQuestions';
-import { distillQuestionsEnPrompt } from '@/lib/llm/prompts/distillQuestionsEn';
 import { db } from '@/lib/db';
-import { getProject } from '@/lib/db/projects';
 
 const LLMClient = require('@/lib/llm/core');
 
@@ -61,24 +59,15 @@ export async function POST(request, { params }) {
 
     const existingQuestionTexts = existingQuestions.map(q => q.question);
 
-    // 创建LLM客户端
-    // 使用前端传过来的模型配置
     const llmClient = new LLMClient(model);
-
-    // 获取项目配置
-    const project = await getProject(projectId);
-    const { globalPrompt } = project || {};
-
-    // 生成提示词
-    const promptFunc = language === 'en' ? distillQuestionsEnPrompt : distillQuestionsPrompt;
-    const prompt = promptFunc(tagPath, currentTag, count, existingQuestionTexts, globalPrompt);
-
-    // 调用大模型生成问题
+    const prompt = await distillQuestionsPrompt(
+      language,
+      { tagPath, currentTag, count, existingQuestionTexts },
+      projectId
+    );
     const { answer } = await llmClient.getResponseWithCOT(prompt);
 
-    // 解析返回的问题
     let questions = [];
-
     try {
       questions = JSON.parse(answer);
     } catch (error) {

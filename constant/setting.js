@@ -6,5 +6,11 @@ export const DEFAULT_SETTINGS = {
   questionMaskRemovingProbability: 60,
   huggingfaceToken: '',
   concurrencyLimit: 5,
-  visionConcurrencyLimit: 5
+  visionConcurrencyLimit: 5,
+  // 多轮对话数据集默认配置
+  multiTurnSystemPrompt: '',
+  multiTurnScenario: '',
+  multiTurnRounds: 3,
+  multiTurnRoleA: '',
+  multiTurnRoleB: ''
 };

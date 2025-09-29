@@ -92,7 +92,7 @@ export async function DELETE(request, { params }) {
 
     // 删除文件及其相关的文本块、问题和数据集
     const { stats, fileName, fileInfo } = await delUploadFileInfoById(fileId);
-
+    const deleteToc = await getProjectTocByName(projectId, fileName);
     try {
       const projectRoot = await getProjectRoot();
       const projectPath = path.join(projectRoot, projectId);
@@ -134,8 +134,6 @@ export async function DELETE(request, { params }) {
           cascadeDelete: true
         });
       }
-
-      const deleteToc = await getProjectTocByName(projectId, fileName);
 
       // 调用领域树处理模块
       await handleDomainTree({

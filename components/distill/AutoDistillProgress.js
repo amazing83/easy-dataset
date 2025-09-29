@@ -51,6 +51,8 @@ export default function AutoDistillProgress({ open, onClose, progress = {} }) {
         return t('distill.stageBuildingQuestions');
       case 'datasets':
         return t('distill.stageBuildingDatasets');
+      case 'multi-turn-datasets':
+        return t('distill.stageBuildingMultiTurnDatasets', { defaultValue: '生成多轮对话数据集中...' });
       case 'completed':
         return t('distill.stageCompleted');
       default:
@@ -103,7 +105,13 @@ export default function AutoDistillProgress({ open, onClose, progress = {} }) {
               </Box>
             </Box>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: progress.multiTurnDatasetsTotal > 0 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
+                gap: 2
+              }}
+            >
               <Paper variant="outlined" sx={{ p: 2 }}>
                 <Typography variant="body2" color="text.secondary">
                   {t('distill.tagsProgress')}
@@ -130,6 +138,17 @@ export default function AutoDistillProgress({ open, onClose, progress = {} }) {
                   {progress.datasetsBuilt || 0} / {progress.datasetsTotal || 0}
                 </Typography>
               </Paper>
+
+              {progress.multiTurnDatasetsTotal > 0 && (
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('distill.multiTurnDatasetsProgress', { defaultValue: '多轮对话进度' })}
+                  </Typography>
+                  <Typography variant="h6">
+                    {progress.multiTurnDatasetsBuilt || 0} / {progress.multiTurnDatasetsTotal || 0}
+                  </Typography>
+                </Paper>
+              )}
             </Box>
           </Box>
 

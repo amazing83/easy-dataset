@@ -7,7 +7,7 @@ import { getDatasets } from '@/lib/db/datasets';
 export async function POST(request, { params }) {
   try {
     const { projectId } = params;
-    const { formatType, systemPrompt, confirmedOnly, includeCOT } = await request.json();
+    const { formatType, systemPrompt, confirmedOnly, includeCOT, reasoningLanguage } = await request.json();
 
     if (!projectId) {
       return NextResponse.json({ error: 'The project ID cannot be empty' }, { status: 400 });
@@ -19,6 +19,7 @@ export async function POST(request, { params }) {
     const configPath = path.join(projectPath, 'dataset_info.json');
     const alpacaPath = path.join(projectPath, 'alpaca.json');
     const sharegptPath = path.join(projectPath, 'sharegpt.json');
+    const multilingualThinkingPath = path.join(projectPath, 'multilingual-thinking.json');
 
     // 获取数据集
     let datasets = await getDatasets(projectId, !!confirmedOnly);
@@ -37,6 +38,20 @@ export async function POST(request, { params }) {
       [`[Easy Dataset] [${projectId}] ShareGPT`]: {
         file_name: 'sharegpt.json',
         formatting: 'sharegpt',
+        columns: {
+          messages: 'messages'
+        },
+        tags: {
+          role_tag: 'role',
+          content_tag: 'content',
+          user_tag: 'user',
+          assistant_tag: 'assistant',
+          system_tag: 'system'
+        }
+      },
+      [`[Easy Dataset] [${projectId}] multilingual-thinking`]: {
+        file_name: 'multilingual-thinking.json',
+        formatting: 'multilingual-thinking',
         columns: {
           messages: 'messages'
         },
@@ -76,6 +91,34 @@ export async function POST(request, { params }) {
       });
       return { messages };
     });
+    const multilingualThinkingData = datasets.map(({ question, answer, cot }) => ({
+      reasoning_language: reasoningLanguage ? reasoningLanguage : 'English',
+      developer: systemPrompt ? systemPrompt : '', // system prompt (may be empty)
+      user: question,
+      analysis: includeCOT && cot ? cot : null, // null if no COT
+      final: answer,
+      messages: [
+        {
+          content: systemPrompt ? systemPrompt : '',
+          role: 'system',
+          thinking: null
+        },
+        {
+          content: question,
+          role: 'user',
+          thinking: null
+        },
+        {
+          content: answer,
+          role: 'assistant',
+          thinking: includeCOT && cot ? cot : null
+        }
+      ]
+    }));
+
+    const multilingualThinkingLines = multilingualThinkingData.map(item => JSON.stringify(item, null, 2)).join('\n');
+
+    await fs.promises.writeFile(multilingualThinkingPath, multilingualThinkingLines, 'utf8');
 
     // 写入文件
     await fs.promises.writeFile(configPath, JSON.stringify(config, null, 2));
@@ -87,7 +130,8 @@ export async function POST(request, { params }) {
       configPath,
       files: [
         { path: alpacaPath, format: 'alpaca' },
-        { path: sharegptPath, format: 'sharegpt' }
+        { path: sharegptPath, format: 'sharegpt' },
+        { path: multilingualThinkingPath, format: 'multilingual-thinking' }
       ]
     });
   } catch (error) {

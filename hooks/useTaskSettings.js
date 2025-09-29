@@ -28,10 +28,18 @@ export default function useTaskSettings(projectId) {
             ...DEFAULT_SETTINGS
           });
         } else {
-          setTaskSettings({
+          // 确保所有默认值都被正确设置，特别是数字类型的字段
+          const mergedSettings = {
             ...DEFAULT_SETTINGS,
             ...data
-          });
+          };
+
+          // 确保 multiTurnRounds 是数字类型
+          if (mergedSettings.multiTurnRounds !== undefined) {
+            mergedSettings.multiTurnRounds = Number(mergedSettings.multiTurnRounds);
+          }
+
+          setTaskSettings(mergedSettings);
         }
       } catch (error) {
         console.error('获取任务配置出错:', error);

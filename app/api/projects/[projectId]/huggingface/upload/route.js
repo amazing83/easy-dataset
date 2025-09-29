@@ -19,7 +19,8 @@ export async function POST(request, { params }) {
       confirmedOnly,
       includeCOT,
       fileFormat,
-      customFields
+      customFields,
+      reasoningLanguage
     } = await request.json();
 
     // 获取项目信息
@@ -158,6 +159,47 @@ function formatDataset(questions, formatType, systemPrompt, includeCOT, customFi
       messages.push({
         role: 'assistant',
         content: includeCOT && q.cot ? `${q.cot}\n\n${q.answer}` : q.answer
+      });
+
+      return { messages };
+    });
+  } else if (formatType === 'multilingualthinking') {
+    return questions.map(q => {
+      const messages = [];
+
+      // Main message block
+      const mainMsg = {
+        reasoning_language: reasoningLanguage ? reasoningLanguage : 'English',
+        user: q.question,
+        analysis: includeCOT && q.cot ? `${q.cot}` : null,
+        final: q.answer
+      };
+      if (systemPrompt) {
+        mainMsg.developer = systemPrompt;
+      }
+      messages.push(mainMsg);
+
+      // Optional system prompt
+      if (systemPrompt) {
+        messages.push({
+          role: 'system',
+          content: systemPrompt,
+          thinking: null
+        });
+      }
+
+      // User message
+      messages.push({
+        role: 'user',
+        content: q.question,
+        thinking: null
+      });
+
+      // Assistant message
+      messages.push({
+        role: 'assistant',
+        content: q.answer,
+        thinking: includeCOT && q.cot ? `${q.cot}` : null
       });
 
       return { messages };

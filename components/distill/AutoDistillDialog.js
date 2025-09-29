@@ -13,7 +13,12 @@ import {
   Box,
   Alert,
   Paper,
-  Divider
+  Divider,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio
 } from '@mui/material';
 
 /**
@@ -34,6 +39,7 @@ export default function AutoDistillDialog({ open, onClose, onStart, projectId, p
   const [levels, setLevels] = useState(2);
   const [tagsPerLevel, setTagsPerLevel] = useState(10);
   const [questionsPerTag, setQuestionsPerTag] = useState(10);
+  const [datasetType, setDatasetType] = useState('single-turn'); // 'single-turn' | 'multi-turn' | 'both'
 
   // 计算信息
   const [estimatedTags, setEstimatedTags] = useState(0); // 所有标签总数（包括根节点和中间节点）
@@ -101,7 +107,8 @@ export default function AutoDistillDialog({ open, onClose, onStart, projectId, p
       tagsPerLevel,
       questionsPerTag,
       estimatedTags,
-      estimatedQuestions
+      estimatedQuestions,
+      datasetType
     });
   };
 
@@ -172,6 +179,31 @@ export default function AutoDistillDialog({ open, onClose, onStart, projectId, p
                 }}
                 helperText={t('distill.questionsPerTagHelper', { max: 50 })}
               />
+            </Box>
+
+            <Box sx={{ mt: 3, mb: 2 }}>
+              <FormControl component="fieldset">
+                <FormLabel component="legend" sx={{ mb: 2, fontWeight: 'medium' }}>
+                  {t('distill.datasetType', { defaultValue: '数据集类型' })}
+                </FormLabel>
+                <RadioGroup value={datasetType} onChange={e => setDatasetType(e.target.value)}>
+                  <FormControlLabel
+                    value="single-turn"
+                    control={<Radio />}
+                    label={t('distill.singleTurnDataset', { defaultValue: '单轮对话数据集' })}
+                  />
+                  <FormControlLabel
+                    value="multi-turn"
+                    control={<Radio />}
+                    label={t('distill.multiTurnDataset', { defaultValue: '多轮对话数据集' })}
+                  />
+                  <FormControlLabel
+                    value="both"
+                    control={<Radio />}
+                    label={t('distill.bothDatasetTypes', { defaultValue: '两种数据集都生成' })}
+                  />
+                </RadioGroup>
+              </FormControl>
             </Box>
           </Box>
 

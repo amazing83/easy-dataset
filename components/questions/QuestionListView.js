@@ -19,7 +19,11 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import EditIcon from '@mui/icons-material/Edit';
+import ChatIcon from '@mui/icons-material/Chat';
 import { useGenerateDataset } from '@/hooks/useGenerateDataset';
+import { toast } from 'sonner';
+import { useAtomValue } from 'jotai';
+import { selectedModelInfoAtom } from '@/lib/store';
 
 export default function QuestionListView({
   questions = [],
@@ -37,6 +41,8 @@ export default function QuestionListView({
   // 处理状态
   const [processingQuestions, setProcessingQuestions] = useState({});
   const { generateSingleDataset } = useGenerateDataset();
+  // 获取当前选中的模型
+  const selectedModelInfo = useAtomValue(selectedModelInfoAtom);
 
   // 获取文本块的标题
   const getChunkTitle = content => {
@@ -68,6 +74,83 @@ export default function QuestionListView({
       [questionId]: false
     }));
     refreshQuestions();
+  };
+
+  // 处理生成多轮对话数据集
+  const handleGenerateMultiTurnDataset = async (questionId, questionInfo) => {
+    try {
+      // 设置处理状态
+      setProcessingQuestions(prev => ({
+        ...prev,
+        [`${questionId}_multi`]: true
+      }));
+
+      // 首先检查项目是否配置了多轮对话设置
+      const configResponse = await fetch(`/api/projects/${projectId}/tasks`);
+      if (!configResponse.ok) {
+        throw new Error('获取项目配置失败');
+      }
+
+      const config = await configResponse.json();
+      const multiTurnConfig = {
+        systemPrompt: config.multiTurnSystemPrompt,
+        scenario: config.multiTurnScenario,
+        rounds: config.multiTurnRounds,
+        roleA: config.multiTurnRoleA,
+        roleB: config.multiTurnRoleB
+      };
+
+      console.log('multiTurnConfig:', multiTurnConfig);
+
+      // 检查是否已配置必要的多轮对话设置
+      // 系统提示词是可选的，但场景、角色A、角色B和轮数是必需的
+      if (
+        !multiTurnConfig.scenario ||
+        !multiTurnConfig.roleA ||
+        !multiTurnConfig.roleB ||
+        !multiTurnConfig.rounds ||
+        multiTurnConfig.rounds < 1
+      ) {
+        toast.error(t('questions.multiTurnNotConfigured', '请先在项目设置中配置多轮对话相关参数'));
+        return;
+      }
+
+      // 检查是否选中了模型
+      if (!selectedModelInfo) {
+        toast.error(t('datasets.selectModelFirst', '请先选择模型'));
+        return;
+      }
+
+      // 调用多轮对话生成API
+      const response = await fetch(`/api/projects/${projectId}/dataset-conversations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          questionId,
+          ...multiTurnConfig,
+          model: selectedModelInfo
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '生成多轮对话数据集失败');
+      }
+
+      const result = await response.json();
+      toast.success(t('questions.multiTurnGenerated', '多轮对话数据集生成成功！'));
+    } catch (error) {
+      console.error('生成多轮对话数据集失败:', error);
+      toast.error(error.message || '生成多轮对话数据集失败');
+    } finally {
+      // 重置处理状态
+      setProcessingQuestions(prev => ({
+        ...prev,
+        [`${questionId}_multi`]: false
+      }));
+    }
   };
 
   return (
@@ -178,7 +261,7 @@ export default function QuestionListView({
                   </Tooltip>
                 </Box>
 
-                <Box sx={{ width: 120, display: 'flex', justifyContent: 'center' }}>
+                <Box sx={{ width: 160, display: 'flex', justifyContent: 'center' }}>
                   <Tooltip title={t('common.edit')}>
                     <IconButton
                       size="small"
@@ -207,6 +290,20 @@ export default function QuestionListView({
                         <CircularProgress size={16} />
                       ) : (
                         <AutoFixHighIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={t('questions.generateMultiTurn', '生成多轮对话')}>
+                    <IconButton
+                      size="small"
+                      color="secondary"
+                      onClick={() => handleGenerateMultiTurnDataset(question.id, question.question)}
+                      disabled={processingQuestions[`${questionKey}_multi`]}
+                    >
+                      {processingQuestions[`${questionKey}_multi`] ? (
+                        <CircularProgress size={16} />
+                      ) : (
+                        <ChatIcon fontSize="small" />
                       )}
                     </IconButton>
                   </Tooltip>
