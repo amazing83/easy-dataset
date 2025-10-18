@@ -301,8 +301,14 @@ export default function DatasetsPage({ params }) {
   // 处理导出数据集 - 智能选择导出方式
   const handleExportDatasets = async exportOptions => {
     try {
-      // 获取当前筛选条件下的数据总量
-      const totalCount = datasets.total || 0;
+      // 如果有选中数据集，则传递选中的 ID 列表，否则传递筛选条件
+      const exportOptionsWithSelection = {
+        ...exportOptions,
+        ...(selectedIds.length > 0 && { selectedIds })
+      };
+
+      // 获取数据总量：如果有选中数据集则使用选中数量，否则使用当前筛选条件下的数据总量
+      const totalCount = selectedIds.length > 0 ? selectedIds.length : datasets.total || 0;
 
       // 设置阈值：超过2000条数据使用流式导出
       const STREAMING_THRESHOLD = 1000;
@@ -317,7 +323,7 @@ export default function DatasetsPage({ params }) {
         // 使用流式导出，显示进度
         setExportProgress({ show: true, processed: 0, total: totalCount });
 
-        success = await exportDatasetsStreaming(exportOptions, progress => {
+        success = await exportDatasetsStreaming(exportOptionsWithSelection, progress => {
           setExportProgress(prev => ({
             ...prev,
             processed: progress.processed,
@@ -329,11 +335,11 @@ export default function DatasetsPage({ params }) {
         setExportProgress({ show: false, processed: 0, total: 0 });
       } else {
         // 使用传统导出方式
-        success = await exportDatasets(exportOptions);
+        success = await exportDatasets(exportOptionsWithSelection);
       }
 
       if (success) {
-        // 关闭导出对话框
+        // 关闭export对话框
         handleCloseExportDialog();
       }
     } catch (error) {
