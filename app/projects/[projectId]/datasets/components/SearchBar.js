@@ -1,11 +1,18 @@
 'use client';
 
-import { Box, Paper, IconButton, InputBase, Select, MenuItem, Button } from '@mui/material';
+import { Box, Paper, IconButton, InputBase, Select, MenuItem, Button, Badge } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { useTranslation } from 'react-i18next';
 
-const SearchBar = ({ searchQuery, searchField, onSearchQueryChange, onSearchFieldChange, onMoreFiltersClick }) => {
+const SearchBar = ({
+  searchQuery,
+  searchField,
+  onSearchQueryChange,
+  onSearchFieldChange,
+  onMoreFiltersClick,
+  activeFilterCount = 0
+}) => {
   const { t } = useTranslation();
 
   return (
@@ -49,9 +56,11 @@ const SearchBar = ({ searchQuery, searchField, onSearchQueryChange, onSearchFiel
           }
         />
       </Paper>
-      <Button variant="outlined" onClick={onMoreFiltersClick} startIcon={<FilterListIcon />} sx={{ borderRadius: 2 }}>
-        {t('datasets.moreFilters')}
-      </Button>
+      <Badge badgeContent={activeFilterCount} color="error" overlap="circular">
+        <Button variant="outlined" onClick={onMoreFiltersClick} startIcon={<FilterListIcon />} sx={{ borderRadius: 2 }}>
+          {t('datasets.moreFilters')}
+        </Button>
+      </Badge>
     </Box>
   );
 };
