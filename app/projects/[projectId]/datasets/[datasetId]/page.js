@@ -23,8 +23,10 @@ export default function DatasetDetailsPage({ params }) {
     loading,
     editingAnswer,
     editingCot,
+    editingQuestion,
     answerValue,
     cotValue,
+    questionValue,
     snackbar,
     confirming,
     optimizeDialog,
@@ -39,8 +41,10 @@ export default function DatasetDetailsPage({ params }) {
     setSnackbar,
     setAnswerValue,
     setCotValue,
+    setQuestionValue,
     setEditingAnswer,
     setEditingCot,
+    setEditingQuestion,
     handleNavigate,
     handleConfirm,
     handleSave,
@@ -93,14 +97,18 @@ export default function DatasetDetailsPage({ params }) {
         {/* 左侧主要内容区域 */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Paper sx={{ p: 3 }}>
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 1 }}>
-                {t('datasets.question')}
-              </Typography>
-              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                {currentDataset.question}
-              </Typography>
-            </Box>
+            <EditableField
+              label={t('datasets.question')}
+              value={questionValue}
+              editing={editingQuestion}
+              onEdit={() => setEditingQuestion(true)}
+              onChange={e => setQuestionValue(e.target.value)}
+              onSave={() => handleSave('question', questionValue)}
+              onCancel={() => {
+                setEditingQuestion(false);
+                setQuestionValue(currentDataset.question);
+              }}
+            />
 
             <EditableField
               label={t('datasets.answer')}

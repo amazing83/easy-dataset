@@ -18,8 +18,10 @@ export default function useDatasetDetails(projectId, datasetId) {
   const [loading, setLoading] = useState(true);
   const [editingAnswer, setEditingAnswer] = useState(false);
   const [editingCot, setEditingCot] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState(false);
   const [answerValue, setAnswerValue] = useState('');
   const [cotValue, setCotValue] = useState('');
+  const [questionValue, setQuestionValue] = useState('');
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -70,6 +72,7 @@ export default function useDatasetDetails(projectId, datasetId) {
       setCurrentDataset(data.datasets);
       setCotValue(data.datasets?.cot);
       setAnswerValue(data.datasets?.answer);
+      setQuestionValue(data.datasets?.question);
       setDatasetsAllCount(data.total);
       setDatasetsConfirmCount(data.confirmedCount);
 
@@ -164,6 +167,7 @@ export default function useDatasetDetails(projectId, datasetId) {
       // 重置编辑状态
       if (field === 'answer') setEditingAnswer(false);
       if (field === 'cot') setEditingCot(false);
+      if (field === 'question') setEditingQuestion(false);
     } catch (error) {
       setSnackbar({
         open: true,
@@ -350,8 +354,10 @@ export default function useDatasetDetails(projectId, datasetId) {
     currentDataset,
     answerValue,
     cotValue,
+    questionValue,
     editingAnswer,
     editingCot,
+    editingQuestion,
     confirming,
     snackbar,
     optimizeDialog,
@@ -366,8 +372,10 @@ export default function useDatasetDetails(projectId, datasetId) {
     setSnackbar,
     setAnswerValue,
     setCotValue,
+    setQuestionValue,
     setEditingAnswer,
     setEditingCot,
+    setEditingQuestion,
     handleNavigate,
     handleConfirm,
     handleSave,

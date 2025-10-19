@@ -145,7 +145,7 @@ export async function PATCH(request) {
   try {
     const { searchParams } = new URL(request.url);
     const datasetId = searchParams.get('id');
-    const { answer, cot, confirmed } = await request.json();
+    const { answer, cot, question, confirmed } = await request.json();
     if (!datasetId) {
       return NextResponse.json(
         {
@@ -168,6 +168,7 @@ export async function PATCH(request) {
     if (confirmed) data.confirmed = confirmed;
     if (answer) data.answer = answer;
     if (cot) data.cot = cot;
+    if (question) data.question = question;
 
     // 保存更新后的数据集列表
     await updateDataset(data);
