@@ -165,7 +165,7 @@ export async function PATCH(request) {
       );
     }
     let data = { id: datasetId };
-    if (confirmed) data.confirmed = confirmed;
+    if (confirmed !== undefined) data.confirmed = confirmed;
     if (answer) data.answer = answer;
     if (cot) data.cot = cot;
     if (question) data.question = question;

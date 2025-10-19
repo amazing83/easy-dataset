@@ -605,6 +605,8 @@
     "datasetDetail": "Dataset Details",
     "metadata": "Metadata",
     "confirmSave": "Confirm Save",
+    "unconfirm": "Unconfirm",
+    "unconfirming": "Unconfirming...",
     "uncategorized": "Uncategorized",
     "questionCount": "{{count}} Questions",
     "source": "Source",

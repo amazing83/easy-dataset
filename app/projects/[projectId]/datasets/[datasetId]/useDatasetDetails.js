@@ -28,6 +28,7 @@ export default function useDatasetDetails(projectId, datasetId) {
     severity: 'success'
   });
   const [confirming, setConfirming] = useState(false);
+  const [unconfirming, setUnconfirming] = useState(false);
   const [optimizeDialog, setOptimizeDialog] = useState({
     open: false,
     loading: false
@@ -125,6 +126,42 @@ export default function useDatasetDetails(projectId, datasetId) {
       });
     } finally {
       setConfirming(false);
+    }
+  };
+
+  // 取消确认数据集
+  const handleUnconfirm = async () => {
+    try {
+      setUnconfirming(true);
+      const response = await fetch(`/api/projects/${projectId}/datasets?id=${datasetId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          confirmed: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('操作失败');
+      }
+
+      setCurrentDataset(prev => ({ ...prev, confirmed: false }));
+
+      setSnackbar({
+        open: true,
+        message: '已取消确认',
+        severity: 'success'
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error.message || '取消确认失败',
+        severity: 'error'
+      });
+    } finally {
+      setUnconfirming(false);
     }
   };
 
@@ -359,6 +396,7 @@ export default function useDatasetDetails(projectId, datasetId) {
     editingCot,
     editingQuestion,
     confirming,
+    unconfirming,
     snackbar,
     optimizeDialog,
     viewDialogOpen,
@@ -378,6 +416,7 @@ export default function useDatasetDetails(projectId, datasetId) {
     setEditingQuestion,
     handleNavigate,
     handleConfirm,
+    handleUnconfirm,
     handleSave,
     handleDelete,
     handleOpenOptimizeDialog,

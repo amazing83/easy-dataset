@@ -29,6 +29,7 @@ export default function DatasetDetailsPage({ params }) {
     questionValue,
     snackbar,
     confirming,
+    unconfirming,
     optimizeDialog,
     viewDialogOpen,
     viewChunk,
@@ -47,6 +48,7 @@ export default function DatasetDetailsPage({ params }) {
     setEditingQuestion,
     handleNavigate,
     handleConfirm,
+    handleUnconfirm,
     handleSave,
     handleDelete,
     handleOpenOptimizeDialog,
@@ -84,11 +86,13 @@ export default function DatasetDetailsPage({ params }) {
         datasetsAllCount={datasetsAllCount}
         datasetsConfirmCount={datasetsConfirmCount}
         confirming={confirming}
+        unconfirming={unconfirming}
         currentDataset={currentDataset}
         shortcutsEnabled={shortcutsEnabled}
         setShortcutsEnabled={setShortcutsEnabled}
         onNavigate={handleNavigate}
         onConfirm={handleConfirm}
+        onUnconfirm={handleUnconfirm}
         onDelete={handleDelete}
       />
 
