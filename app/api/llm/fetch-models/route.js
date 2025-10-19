@@ -11,7 +11,20 @@ export async function POST(request) {
     }
 
     let url = endpoint.replace(/\/$/, ''); // 去除末尾的斜杠
-    url += providerId === 'ollama' ? '/tags' : '/models';
+
+    // 处理 Ollama endpoint
+    if (providerId === 'ollama') {
+      // 移除可能存在的 /v1 或其他版本前缀
+      url = url.replace(/\/v\d+$/, '');
+
+      // 如果 endpoint 不包含 /api，则添加
+      if (!url.includes('/api')) {
+        url += '/api';
+      }
+      url += '/tags';
+    } else {
+      url += '/models';
+    }
 
     const headers = {};
     if (apiKey) {
@@ -23,18 +36,23 @@ export async function POST(request) {
     // 根据不同提供商格式化返回数据
     let formattedModels = [];
     if (providerId === 'ollama') {
-      formattedModels = response.data.models.map(item => ({
-        modelId: item.model,
-        modelName: item.name,
-        providerId
-      }));
+      // Ollama /api/tags 返回的格式: { models: [{ name: 'model-name', ... }] }
+      if (response.data.models && Array.isArray(response.data.models)) {
+        formattedModels = response.data.models.map(item => ({
+          modelId: item.name,
+          modelName: item.name,
+          providerId
+        }));
+      }
     } else {
-      // 默认处理方式（适用于 OpenAI 等）
-      formattedModels = response.data.data.map(item => ({
-        modelId: item.id,
-        modelName: item.id,
-        providerId
-      }));
+      // 默认处理方式（適用于 OpenAI 等）
+      if (response.data.data && Array.isArray(response.data.data)) {
+        formattedModels = response.data.data.map(item => ({
+          modelId: item.id,
+          modelName: item.id,
+          providerId
+        }));
+      }
     }
 
     return NextResponse.json(formattedModels);
