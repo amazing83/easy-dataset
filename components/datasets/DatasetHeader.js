@@ -4,6 +4,7 @@ import { Box, Button, Divider, Typography, IconButton, CircularProgress, Paper, 
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import DeleteIcon from '@mui/icons-material/Delete';
+import UndoIcon from '@mui/icons-material/Undo';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 
@@ -15,11 +16,13 @@ export default function DatasetHeader({
   datasetsAllCount,
   datasetsConfirmCount,
   confirming,
+  unconfirming,
   currentDataset,
   shortcutsEnabled,
   setShortcutsEnabled,
   onNavigate,
   onConfirm,
+  onUnconfirm,
   onDelete
 }) {
   const router = useRouter();
@@ -65,21 +68,25 @@ export default function DatasetHeader({
             <NavigateNextIcon />
           </IconButton>
           <Divider orientation="vertical" flexItem />
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={confirming || currentDataset.confirmed}
-            onClick={onConfirm}
-            sx={{ mr: 1 }}
-          >
-            {confirming ? (
-              <CircularProgress size={24} />
-            ) : currentDataset.confirmed ? (
-              t('datasets.confirmed')
-            ) : (
-              t('datasets.confirmSave')
-            )}
-          </Button>
+
+          {/* 确认/取消确认按钮 */}
+          {currentDataset.confirmed ? (
+            <Button
+              variant="outlined"
+              color="warning"
+              disabled={unconfirming}
+              onClick={onUnconfirm}
+              startIcon={unconfirming ? <CircularProgress size={16} /> : <UndoIcon />}
+              sx={{ mr: 1 }}
+            >
+              {unconfirming ? t('datasets.unconfirming') : t('datasets.unconfirm')}
+            </Button>
+          ) : (
+            <Button variant="contained" color="primary" disabled={confirming} onClick={onConfirm} sx={{ mr: 1 }}>
+              {confirming ? <CircularProgress size={24} /> : t('datasets.confirmSave')}
+            </Button>
+          )}
+
           <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={onDelete}>
             {t('common.delete')}
           </Button>

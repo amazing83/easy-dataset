@@ -21,7 +21,10 @@ const useDatasetExport = projectId => {
         let apiUrl = `/api/projects/${projectId}/datasets/export`;
         const params = ['batchMode=true', `offset=${offset}`, `batchSize=${batchSize}`];
 
-        if (exportOptions.confirmedOnly) {
+        // 如果有选中的数据集 ID，传递 ID 列表
+        if (exportOptions.selectedIds && exportOptions.selectedIds.length > 0) {
+          params.push(`selectedIds=${encodeURIComponent(JSON.stringify(exportOptions.selectedIds))}`);
+        } else if (exportOptions.confirmedOnly) {
           params.push(`status=confirmed`);
         }
 
@@ -277,7 +280,10 @@ const useDatasetExport = projectId => {
       let apiUrl = `/api/projects/${projectId}/datasets/export`;
       const params = [];
 
-      if (exportOptions.confirmedOnly) {
+      // 如果有选中的数据集 ID，传递 ID 列表
+      if (exportOptions.selectedIds && exportOptions.selectedIds.length > 0) {
+        params.push(`selectedIds=${encodeURIComponent(JSON.stringify(exportOptions.selectedIds))}`);
+      } else if (exportOptions.confirmedOnly) {
         params.push(`status=confirmed`);
       }
 

@@ -118,6 +118,48 @@ export default function FileUploadStep({ onDataLoaded, onError }) {
     return result;
   };
 
+  // 检测并转换ShareGPT格式为Alpaca格式
+  const convertShareGPTToAlpaca = item => {
+    // 检查是否包含conversations字段且格式正确
+    if (item.conversations && Array.isArray(item.conversations)) {
+      const conversations = item.conversations;
+
+      // 查找system、human、gpt消息
+      let systemMessage = '';
+      let instruction = '';
+      let output = '';
+
+      for (const conv of conversations) {
+        if (conv.from === 'system' && conv.value) {
+          systemMessage = conv.value;
+        } else if (conv.from === 'human' && conv.value) {
+          instruction = conv.value;
+        } else if (conv.from === 'gpt' && conv.value) {
+          output = conv.value;
+          break; // 只取第一轮对话
+        }
+      }
+
+      // 如果有system消息，将其作为instruction的前缀
+      if (systemMessage && instruction) {
+        instruction = `${systemMessage}\n\n${instruction}`;
+      } else if (systemMessage && !instruction) {
+        instruction = systemMessage;
+      }
+
+      // 转换为Alpaca格式
+      return {
+        instruction: instruction || '',
+        input: '', // ShareGPT格式通常没有单独的input字段
+        output: output || '',
+        // 保留其他字段
+        ...Object.fromEntries(Object.entries(item).filter(([key]) => key !== 'conversations'))
+      };
+    }
+
+    return item; // 如果不是ShareGPT格式，返回原始数据
+  };
+
   const parseFileContent = async file => {
     const text = await file.text();
     const extension = file.name.split('.').pop().toLowerCase();
@@ -146,6 +188,9 @@ export default function FileUploadStep({ onDataLoaded, onError }) {
       if (data.length === 0) {
         throw new Error('文件中没有找到有效数据');
       }
+
+      // 检测并转换ShareGPT格式为Alpaca格式
+      data = data.map(convertShareGPTToAlpaca);
 
       // 生成预览数据（取前3条记录，每个字段值截取前100字符）
       const previewData = data.slice(0, 3).map(item => {

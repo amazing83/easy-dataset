@@ -15,6 +15,7 @@ import FilterDialog from './components/FilterDialog';
 import DeleteConfirmDialog from './components/DeleteConfirmDialog';
 import useDatasetExport from './hooks/useDatasetExport';
 import useDatasetEvaluation from './hooks/useDatasetEvaluation';
+import useDatasetFilters from './hooks/useDatasetFilters';
 import { processInParallel } from '@/lib/util/async';
 import axios from 'axios';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -35,21 +36,36 @@ export default function DatasetsPage({ params }) {
   });
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearchQuery = useDebounce(searchQuery);
-  const [searchField, setSearchField] = useState('question'); // 新增：筛选字段，默认为问题
   const [exportDialog, setExportDialog] = useState({ open: false });
   const [importDialog, setImportDialog] = useState({ open: false });
   const [selectedIds, setselectedIds] = useState([]);
-  const [filterConfirmed, setFilterConfirmed] = useState('all');
-  const [filterHasCot, setFilterHasCot] = useState('all');
-  const [filterIsDistill, setFilterIsDistill] = useState('all');
-  const [filterScoreRange, setFilterScoreRange] = useState([0, 5]);
-  const [filterCustomTag, setFilterCustomTag] = useState('');
-  const [filterNoteKeyword, setFilterNoteKeyword] = useState('');
   const [availableTags, setAvailableTags] = useState([]);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const { t } = useTranslation();
+
+  // 使用 useDatasetFilters Hook 管理筛选条件
+  const {
+    filterConfirmed,
+    setFilterConfirmed,
+    filterHasCot,
+    setFilterHasCot,
+    filterIsDistill,
+    setFilterIsDistill,
+    filterScoreRange,
+    setFilterScoreRange,
+    filterCustomTag,
+    setFilterCustomTag,
+    filterNoteKeyword,
+    setFilterNoteKeyword,
+    searchQuery,
+    setSearchQuery,
+    searchField,
+    setSearchField,
+    isInitialized,
+    getActiveFilterCount
+  } = useDatasetFilters(projectId);
+
+  const debouncedSearchQuery = useDebounce(searchQuery);
   // 删除进度状态
   const [deleteProgress, setDeteleProgress] = useState({
     total: 0, // 总删除问题数量
@@ -135,6 +151,8 @@ export default function DatasetsPage({ params }) {
   };
 
   useEffect(() => {
+    if (!isInitialized) return;
+
     getDatasetsList();
     // 获取项目中所有使用过的标签
     const fetchAvailableTags = async () => {
@@ -160,7 +178,8 @@ export default function DatasetsPage({ params }) {
     filterIsDistill,
     filterScoreRange,
     filterCustomTag,
-    filterNoteKeyword
+    filterNoteKeyword,
+    isInitialized
   ]);
 
   // 处理页码变化
@@ -282,8 +301,14 @@ export default function DatasetsPage({ params }) {
   // 处理导出数据集 - 智能选择导出方式
   const handleExportDatasets = async exportOptions => {
     try {
-      // 获取当前筛选条件下的数据总量
-      const totalCount = datasets.total || 0;
+      // 如果有选中数据集，则传递选中的 ID 列表，否则传递筛选条件
+      const exportOptionsWithSelection = {
+        ...exportOptions,
+        ...(selectedIds.length > 0 && { selectedIds })
+      };
+
+      // 获取数据总量：如果有选中数据集则使用选中数量，否则使用当前筛选条件下的数据总量
+      const totalCount = selectedIds.length > 0 ? selectedIds.length : datasets.total || 0;
 
       // 设置阈值：超过2000条数据使用流式导出
       const STREAMING_THRESHOLD = 1000;
@@ -298,7 +323,7 @@ export default function DatasetsPage({ params }) {
         // 使用流式导出，显示进度
         setExportProgress({ show: true, processed: 0, total: totalCount });
 
-        success = await exportDatasetsStreaming(exportOptions, progress => {
+        success = await exportDatasetsStreaming(exportOptionsWithSelection, progress => {
           setExportProgress(prev => ({
             ...prev,
             processed: progress.processed,
@@ -310,11 +335,11 @@ export default function DatasetsPage({ params }) {
         setExportProgress({ show: false, processed: 0, total: 0 });
       } else {
         // 使用传统导出方式
-        success = await exportDatasets(exportOptions);
+        success = await exportDatasets(exportOptionsWithSelection);
       }
 
       if (success) {
-        // 关闭导出对话框
+        // 关闭export对话框
         handleCloseExportDialog();
       }
     } catch (error) {
@@ -332,9 +357,37 @@ export default function DatasetsPage({ params }) {
   const handleSelectAll = async event => {
     if (event.target.checked) {
       // 获取所有符合当前筛选条件的数据，不受分页限制
-      const response = await axios.get(
-        `/api/projects/${projectId}/datasets?status=${filterConfirmed}&input=${searchQuery}&selectedAll=1`
-      );
+      let url = `/api/projects/${projectId}/datasets?selectedAll=1`;
+
+      if (filterConfirmed !== 'all') {
+        url += `&status=${filterConfirmed}`;
+      }
+
+      if (debouncedSearchQuery) {
+        url += `&input=${encodeURIComponent(debouncedSearchQuery)}&field=${searchField}`;
+      }
+
+      if (filterHasCot !== 'all') {
+        url += `&hasCot=${filterHasCot}`;
+      }
+
+      if (filterIsDistill !== 'all') {
+        url += `&isDistill=${filterIsDistill}`;
+      }
+
+      if (filterScoreRange[0] > 0 || filterScoreRange[1] < 5) {
+        url += `&scoreRange=${filterScoreRange[0]}-${filterScoreRange[1]}`;
+      }
+
+      if (filterCustomTag) {
+        url += `&customTag=${encodeURIComponent(filterCustomTag)}`;
+      }
+
+      if (filterNoteKeyword) {
+        url += `&noteKeyword=${encodeURIComponent(filterNoteKeyword)}`;
+      }
+
+      const response = await axios.get(url);
       setselectedIds(response.data.map(dataset => dataset.id));
     } else {
       setselectedIds([]);
@@ -405,6 +458,7 @@ export default function DatasetsPage({ params }) {
               setPage(1);
             }}
             onMoreFiltersClick={() => setFilterDialogOpen(true)}
+            activeFilterCount={getActiveFilterCount()}
           />
           <ActionBar
             batchEvaluating={batchEvaluating}

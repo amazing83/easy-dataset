@@ -562,6 +562,8 @@
     "datasetDetail": "数据集详情",
     "metadata": "元数据",
     "confirmSave": "确认保留",
+    "unconfirm": "取消确认",
+    "unconfirming": "取消确认中...",
     "uncategorized": "未分类",
     "questionCount": "{{count}} 个问题",
     "source": "来源",

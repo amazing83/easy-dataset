@@ -18,14 +18,17 @@ export default function useDatasetDetails(projectId, datasetId) {
   const [loading, setLoading] = useState(true);
   const [editingAnswer, setEditingAnswer] = useState(false);
   const [editingCot, setEditingCot] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState(false);
   const [answerValue, setAnswerValue] = useState('');
   const [cotValue, setCotValue] = useState('');
+  const [questionValue, setQuestionValue] = useState('');
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success'
   });
   const [confirming, setConfirming] = useState(false);
+  const [unconfirming, setUnconfirming] = useState(false);
   const [optimizeDialog, setOptimizeDialog] = useState({
     open: false,
     loading: false
@@ -70,6 +73,7 @@ export default function useDatasetDetails(projectId, datasetId) {
       setCurrentDataset(data.datasets);
       setCotValue(data.datasets?.cot);
       setAnswerValue(data.datasets?.answer);
+      setQuestionValue(data.datasets?.question);
       setDatasetsAllCount(data.total);
       setDatasetsConfirmCount(data.confirmedCount);
 
@@ -125,6 +129,42 @@ export default function useDatasetDetails(projectId, datasetId) {
     }
   };
 
+  // 取消确认数据集
+  const handleUnconfirm = async () => {
+    try {
+      setUnconfirming(true);
+      const response = await fetch(`/api/projects/${projectId}/datasets?id=${datasetId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          confirmed: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('操作失败');
+      }
+
+      setCurrentDataset(prev => ({ ...prev, confirmed: false }));
+
+      setSnackbar({
+        open: true,
+        message: '已取消确认',
+        severity: 'success'
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error.message || '取消确认失败',
+        severity: 'error'
+      });
+    } finally {
+      setUnconfirming(false);
+    }
+  };
+
   // 导航到其他数据集
   const handleNavigate = async direction => {
     const response = await axios.get(`/api/projects/${projectId}/datasets/${datasetId}?operateType=${direction}`);
@@ -164,6 +204,7 @@ export default function useDatasetDetails(projectId, datasetId) {
       // 重置编辑状态
       if (field === 'answer') setEditingAnswer(false);
       if (field === 'cot') setEditingCot(false);
+      if (field === 'question') setEditingQuestion(false);
     } catch (error) {
       setSnackbar({
         open: true,
@@ -350,9 +391,12 @@ export default function useDatasetDetails(projectId, datasetId) {
     currentDataset,
     answerValue,
     cotValue,
+    questionValue,
     editingAnswer,
     editingCot,
+    editingQuestion,
     confirming,
+    unconfirming,
     snackbar,
     optimizeDialog,
     viewDialogOpen,
@@ -366,10 +410,13 @@ export default function useDatasetDetails(projectId, datasetId) {
     setSnackbar,
     setAnswerValue,
     setCotValue,
+    setQuestionValue,
     setEditingAnswer,
     setEditingCot,
+    setEditingQuestion,
     handleNavigate,
     handleConfirm,
+    handleUnconfirm,
     handleSave,
     handleDelete,
     handleOpenOptimizeDialog,
