@@ -276,14 +276,16 @@ export default function ImportProgressStep({ projectId, rawData, fieldMapping, s
                 <ListItemIcon>
                   <ErrorIcon color="error" fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary={error} />
+                <ListItemText primary={error} primaryTypographyProps={{ variant: 'body2' }} />
               </ListItem>
             ))}
           </List>
           {importStats.errors.length > 10 && (
-            <Alert severity="info" sx={{ mt: 2 }}>
-              {t('import.moreErrors', '还有更多错误未显示，详见控制台或网络面板')}
-            </Alert>
+            <Typography variant="body2" color="text.secondary">
+              {t('import.moreErrors', '还有 {{count}} 个错误未显示...', {
+                count: importStats.errors.length - 10
+              })}
+            </Typography>
           )}
         </Paper>
       )}
@@ -291,7 +293,9 @@ export default function ImportProgressStep({ projectId, rawData, fieldMapping, s
       {/* 完成提示 */}
       {completed && (
         <Alert severity="success" sx={{ mt: 2 }}>
-          {t('import.completedTip', '导入已完成，您可以返回数据集页面查看结果')}
+          {t('import.importSuccess', '数据集导入完成！成功导入 {{success}} 条记录。', {
+            success: importStats.success
+          })}
         </Alert>
       )}
     </Box>

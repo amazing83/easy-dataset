@@ -49,10 +49,15 @@ export default function FieldMappingStep({ previewData, onMappingComplete, onErr
     const inputIdx = lower.findIndex(f => f.includes('input'));
     const outputIdx = lower.findIndex(f => f.includes('output'));
 
-    // Alpaca 的优先识别
+    // Alpaca 格式的优先识别
     if (instructionIdx !== -1 && inputIdx !== -1) {
+      // 如果同时有instruction和input字段，将它们组合为question
       mapping.question = [fields[instructionIdx], fields[inputIdx]];
+    } else if (instructionIdx !== -1) {
+      // 如果只有instruction字段（比如从ShareGPT转换而来），直接映射为question
+      mapping.question = fields[instructionIdx];
     }
+
     if (outputIdx !== -1) {
       mapping.answer = fields[outputIdx];
     }
