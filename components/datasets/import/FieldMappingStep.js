@@ -35,7 +35,7 @@ export default function FieldMappingStep({ previewData, onMappingComplete, onErr
   const [availableFields, setAvailableFields] = useState([]);
   const [mappingValid, setMappingValid] = useState(false);
 
-  // 智能字段识别
+  // 智能字段识别（支持 Alpaca: instruction + input -> question，output -> answer）
   const smartFieldMapping = fields => {
     const mapping = {
       question: '',
@@ -43,6 +43,19 @@ export default function FieldMappingStep({ previewData, onMappingComplete, onErr
       cot: '',
       tags: ''
     };
+
+    const lower = fields.map(f => f.toLowerCase());
+    const instructionIdx = lower.findIndex(f => f.includes('instruction'));
+    const inputIdx = lower.findIndex(f => f.includes('input'));
+    const outputIdx = lower.findIndex(f => f.includes('output'));
+
+    // Alpaca 的优先识别
+    if (instructionIdx !== -1 && inputIdx !== -1) {
+      mapping.question = [fields[instructionIdx], fields[inputIdx]];
+    }
+    if (outputIdx !== -1) {
+      mapping.answer = fields[outputIdx];
+    }
 
     const questionKeywords = ['question', 'input', 'query', 'prompt', 'instruction', '问题', '输入', '指令'];
     const answerKeywords = ['answer', 'output', 'response', 'completion', 'target', '答案', '输出', '回答'];
@@ -52,14 +65,22 @@ export default function FieldMappingStep({ previewData, onMappingComplete, onErr
     fields.forEach(field => {
       const fieldLower = field.toLowerCase();
 
-      if (!mapping.question && questionKeywords.some(keyword => fieldLower.includes(keyword))) {
-        mapping.question = field;
-      } else if (!mapping.answer && answerKeywords.some(keyword => fieldLower.includes(keyword))) {
-        mapping.answer = field;
-      } else if (!mapping.cot && cotKeywords.some(keyword => fieldLower.includes(keyword))) {
-        mapping.cot = field;
-      } else if (!mapping.tags && tagKeywords.some(keyword => fieldLower.includes(keyword))) {
-        mapping.tags = field;
+      if (!mapping.question || (typeof mapping.question === 'string' && !mapping.question)) {
+        if (questionKeywords.some(keyword => fieldLower.includes(keyword))) {
+          mapping.question = field;
+        }
+      } else if (!mapping.answer) {
+        if (answerKeywords.some(keyword => fieldLower.includes(keyword))) {
+          mapping.answer = field;
+        }
+      } else if (!mapping.cot) {
+        if (cotKeywords.some(keyword => fieldLower.includes(keyword))) {
+          mapping.cot = field;
+        }
+      } else if (!mapping.tags) {
+        if (tagKeywords.some(keyword => fieldLower.includes(keyword))) {
+          mapping.tags = field;
+        }
       }
     });
 
@@ -79,14 +100,23 @@ export default function FieldMappingStep({ previewData, onMappingComplete, onErr
 
   useEffect(() => {
     // 验证映射是否有效（问题和答案字段必须选择）
-    const isValid = fieldMapping.question && fieldMapping.answer;
+    const hasQuestion = Array.isArray(fieldMapping.question)
+      ? fieldMapping.question.length > 0
+      : !!fieldMapping.question;
+    const hasAnswer = !!fieldMapping.answer;
+    const isValid = hasQuestion && hasAnswer;
     setMappingValid(isValid);
   }, [fieldMapping]);
 
   const handleFieldChange = (targetField, sourceField) => {
     setFieldMapping(prev => ({
       ...prev,
-      [targetField]: sourceField
+      [targetField]:
+        targetField === 'question'
+          ? Array.isArray(sourceField)
+            ? sourceField.filter(Boolean)
+            : sourceField
+          : sourceField
     }));
   };
 
@@ -96,10 +126,12 @@ export default function FieldMappingStep({ previewData, onMappingComplete, onErr
       return;
     }
 
-    // 检查是否有重复映射
-    const mappedFields = Object.values(fieldMapping).filter(field => field);
-    const uniqueFields = [...new Set(mappedFields)];
-    if (mappedFields.length !== uniqueFields.length) {
+    // 检查是否有重复映射（兼容数组）
+    const flatFields = Object.values(fieldMapping)
+      .filter(Boolean)
+      .flatMap(f => (Array.isArray(f) ? f.filter(Boolean) : [f]));
+    const uniqueFields = [...new Set(flatFields)];
+    if (flatFields.length !== uniqueFields.length) {
       onError(t('import.duplicateMapping', '不能将多个目标字段映射到同一个源字段'));
       return;
     }
@@ -110,7 +142,7 @@ export default function FieldMappingStep({ previewData, onMappingComplete, onErr
   const getFieldDescription = field => {
     switch (field) {
       case 'question':
-        return t('import.questionDesc', '用户的问题或输入内容（必选）');
+        return t('import.questionDesc', '用户的问题或输入内容（必选，可多选）');
       case 'answer':
         return t('import.answerDesc', 'AI的回答或输出内容（必选）');
       case 'cot':
@@ -156,20 +188,48 @@ export default function FieldMappingStep({ previewData, onMappingComplete, onErr
                 {t(`import.${targetField}Field`, targetField)}
                 {isFieldRequired(targetField) && <span style={{ color: 'red' }}>*</span>}
               </InputLabel>
-              <Select
-                value={fieldMapping[targetField]}
-                label={t(`import.${targetField}Field`, targetField)}
-                onChange={e => handleFieldChange(targetField, e.target.value)}
-              >
-                <MenuItem value="">
-                  <em>{t('import.selectField', '选择字段')}</em>
-                </MenuItem>
-                {availableFields.map(field => (
-                  <MenuItem key={field} value={field}>
-                    {field}
+              {targetField === 'question' ? (
+                <Select
+                  multiple
+                  value={
+                    Array.isArray(fieldMapping.question)
+                      ? fieldMapping.question
+                      : fieldMapping.question
+                        ? [fieldMapping.question]
+                        : []
+                  }
+                  label={t(`import.${targetField}Field`, targetField)}
+                  onChange={e => handleFieldChange(targetField, e.target.value)}
+                  renderValue={selected => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map(value => (
+                        <Chip key={value} label={value} size="small" />
+                      ))}
+                    </Box>
+                  )}
+                >
+                  {availableFields.map(field => (
+                    <MenuItem key={field} value={field}>
+                      {field}
+                    </MenuItem>
+                  ))}
+                </Select>
+              ) : (
+                <Select
+                  value={fieldMapping[targetField]}
+                  label={t(`import.${targetField}Field`, targetField)}
+                  onChange={e => handleFieldChange(targetField, e.target.value)}
+                >
+                  <MenuItem value="">
+                    <em>{t('import.selectField', '选择字段')}</em>
                   </MenuItem>
-                ))}
-              </Select>
+                  {availableFields.map(field => (
+                    <MenuItem key={field} value={field}>
+                      {field}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
                 {getFieldDescription(targetField)}
               </Typography>
@@ -196,7 +256,8 @@ export default function FieldMappingStep({ previewData, onMappingComplete, onErr
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography variant="subtitle2">{field}</Typography>
                       {Object.entries(fieldMapping).map(([targetField, sourceField]) => {
-                        if (sourceField === field) {
+                        const match = Array.isArray(sourceField) ? sourceField.includes(field) : sourceField === field;
+                        if (match) {
                           return (
                             <Chip
                               key={targetField}

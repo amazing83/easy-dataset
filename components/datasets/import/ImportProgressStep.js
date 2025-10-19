@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -32,9 +32,11 @@ export default function ImportProgressStep({ projectId, rawData, fieldMapping, s
     errors: []
   });
   const [completed, setCompleted] = useState(false);
+  const startedRef = useRef(false); // 防止在开发模式下因严格模式导致重复执行
 
   useEffect(() => {
-    if (rawData && fieldMapping && projectId) {
+    if (!startedRef.current && rawData && fieldMapping && projectId) {
+      startedRef.current = true;
       startImport();
     }
   }, [rawData, fieldMapping, projectId]);
@@ -46,8 +48,17 @@ export default function ImportProgressStep({ projectId, rawData, fieldMapping, s
 
       // 转换数据格式
       const convertedData = rawData.map(item => {
+        // 支持 question 映射多个字段，拼接为一个字符串
+        const qFields = fieldMapping.question;
+        const question = Array.isArray(qFields)
+          ? qFields
+              .map(f => item[f] || '')
+              .filter(v => v && String(v).trim())
+              .join('\n')
+          : item[qFields] || '';
+
         const converted = {
-          question: item[fieldMapping.question] || '',
+          question,
           answer: item[fieldMapping.answer] || '',
           cot: fieldMapping.cot ? item[fieldMapping.cot] || '' : '',
           questionLabel: '', // 默认标签，后续可以通过AI生成
@@ -165,9 +176,15 @@ export default function ImportProgressStep({ projectId, rawData, fieldMapping, s
     return [];
   };
 
-  // 获取其他字段
+  // 获取其他字段（兼容数组映射）
   const getOtherFields = (item, mapping) => {
-    const mappedFields = new Set(Object.values(mapping).filter(field => field));
+    const used = [];
+    Object.values(mapping).forEach(field => {
+      if (!field) return;
+      if (Array.isArray(field)) used.push(...field);
+      else used.push(field);
+    });
+    const mappedFields = new Set(used);
     const otherFields = {};
 
     Object.keys(item).forEach(key => {
@@ -259,16 +276,14 @@ export default function ImportProgressStep({ projectId, rawData, fieldMapping, s
                 <ListItemIcon>
                   <ErrorIcon color="error" fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary={error} primaryTypographyProps={{ variant: 'body2' }} />
+                <ListItemText primary={error} />
               </ListItem>
             ))}
           </List>
           {importStats.errors.length > 10 && (
-            <Typography variant="body2" color="text.secondary">
-              {t('import.moreErrors', '还有 {{count}} 个错误未显示...', {
-                count: importStats.errors.length - 10
-              })}
-            </Typography>
+            <Alert severity="info" sx={{ mt: 2 }}>
+              {t('import.moreErrors', '还有更多错误未显示，详见控制台或网络面板')}
+            </Alert>
           )}
         </Paper>
       )}
@@ -276,9 +291,7 @@ export default function ImportProgressStep({ projectId, rawData, fieldMapping, s
       {/* 完成提示 */}
       {completed && (
         <Alert severity="success" sx={{ mt: 2 }}>
-          {t('import.importSuccess', '数据集导入完成！成功导入 {{success}} 条记录。', {
-            success: importStats.success
-          })}
+          {t('import.completedTip', '导入已完成，您可以返回数据集页面查看结果')}
         </Alert>
       )}
     </Box>
